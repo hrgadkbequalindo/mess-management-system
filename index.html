@@ -1685,44 +1685,26 @@
     // =========================================================================
     // SUNTIKAN ENDPOINT URL API UNTUK SINKRONISASI GO-LIVE GOOGLE SHEETS
     // =========================================================================
-    const API_URL = "https://script.google.com/macros/s/AKfycbzBZBS_SSpEMZ5oznHRmqDn-w3OETyEc01Egz2vtUqBa4hsyC3y1UKvahaBbkSoFYxN/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbwN13yalzyjxVGp4ndYmixGnCKKmPiP2Ao212Loh8gaLTx3k8jF5qkxNQUJkTnUv_w9/exec";
 
     // =========================================================================
     // PERBAIKAN POIN 3: MENYELARASKAN DATA KUNCI AKUN MENJADI HURUF KECIL (LOWERCASE)
     // =========================================================================
     // PERBAIKAN PERMANEN: Menyimpan bank data akun ke localStorage agar modifikasi password tersimpan mutlak
-    // PERBAIKAN PERMANEN: Menyimpan bank data akun ke localStorage agar modifikasi password tersimpan mutlak
-    const defaultUsers = {
-      "asun": { name: "Aditya Heriyanto", role: "Super Admin", pass: "luffy114" },
-      "doni": { name: "Dhonny Wichaksono", role: "Super Admin", pass: "doni123" },
-      "jason": { name: "Jason Andrew Moniaga", role: "Admin", pass: "jason123" },
-      "ester": { name: "Ester Sry Damayanti Sitompul", role: "Admin", pass: "ester123" },
-      "alprita": { name: "Alprita Langi Masirrin", role: "Admin", pass: "alprita123" },
-      "sherli": { name: "Sherli Safani", role: "User", pass: "sherli123" }
-    };
-
-    let currentLocalUsers = {};
-    try {
-      currentLocalUsers = JSON.parse(localStorage.getItem("amms_users_db")) || {};
-    } catch(e) {
-      currentLocalUsers = {};
-    }
-
-    // Jalankan sinkronisasi otomatis: Jika ada akun baru di script, suntikkan langsung ke localStorage
-    let coreDbUpdated = false;
-    Object.keys(defaultUsers).forEach(username => {
-      if (!currentLocalUsers[username]) {
-        currentLocalUsers[username] = defaultUsers[username];
-        coreDbUpdated = true;
-      }
-    });
-
-    if (coreDbUpdated || !localStorage.getItem("amms_users_db")) {
-      localStorage.setItem("amms_users_db", JSON.stringify(currentLocalUsers));
+    if (!localStorage.getItem("amms_users_db")) {
+      const defaultUsers = {
+        "asun": { name: "Aditya Heriyanto", role: "Super Admin", pass: "luffy114" },
+        "doni": { name: "Dhonny Wichaksono", role: "Super Admin", pass: "doni123" },
+        "jason": { name: "Jason Andrew Moniaga", role: "Admin", pass: "jason123" },
+        "ester": { name: "Ester Sry Damayanti Sitompul", role: "Admin", pass: "ester123" },
+        "alprita": { name: "Alprita Langi Masirrin", role: "Admin", pass: "alprita123" },
+        "sherli": { name: "Sherli Safani", role: "User", pass: "sherli123" }
+      };
+      localStorage.setItem("amms_users_db", JSON.stringify(defaultUsers));
     }
     
     // Ambil data users ter-update dari storage penjelajah
-    const MOCK_USERS = currentLocalUsers;
+    const MOCK_USERS = JSON.parse(localStorage.getItem("amms_users_db"));
 
     let currentUser = JSON.parse(localStorage.getItem("amms_current_user")) || null;
     // DATABASE SIMULASI STATUS PENGEMBANGAN MODUL (LANGKAH 1)
@@ -2464,7 +2446,8 @@
           }
         }
 
-        const occupants = mockOccupants.filter(o => o.location_id === loc.location_id && (o.status === "Active" || o.status === "Reserve" || o.status === "Reserved"));
+        // PERBAIKAN: Mengeluarkan status "Checked-Out" secara mutlak dari denah KPI map atas
+        const occupants = mockOccupants.filter(o => o.location_id === loc.location_id && o.status !== "Checked-Out" && o.status !== "");
         const activeOnsiteCount = occupants.filter(o => o.status === "Active" && !o.is_on_leave).length;
         const capacity = parseInt(loc.capacity || 4);
         
@@ -2559,7 +2542,8 @@
       // Render kartu detail bawah secara lossless
       baseFiltered.forEach(loc => {
         const capacity = parseInt(loc.capacity || 4);
-        const occupants = mockOccupants.filter(o => o.location_id === loc.location_id && (o.status === "Active" || o.status === "Reserve" || o.status === "Reserved"));
+        // PERBAIKAN: Mengeluarkan status "Checked-Out" secara mutlak dari render list kartu kamar bawah
+        const occupants = mockOccupants.filter(o => o.location_id === loc.location_id && o.status !== "Checked-Out" && o.status !== "");
         const activeOnsiteCount = occupants.filter(o => o.status === "Active" && !o.is_on_leave).length;
 
         let resolvedStatus = loc.status;
@@ -2572,7 +2556,7 @@
         const curYear = liveDate.getFullYear();
         const curMonth = String(liveDate.getMonth() + 1).padStart(2, '0');
         const curDay = String(liveDate.getDate()).padStart(2, '0');
-        const systemTodayStr = `${curYear}-${curMonth}-${curDay}`; // Menghasilkan format string "2026-07-06" yang dinamis mengikuti waktu asli
+        const systemTodayStr = `${curYear}-${curMonth}-${curDay}`; 
 
         occupants.forEach(occ => {
           // Bersihkan sisa format miring (/) dari Google Sheet menjadi strip (-) jika ada agar perbandingan string akurat
@@ -2582,7 +2566,18 @@
           const isFutureShadow = (standardizedCheckIn > systemTodayStr);
           
           let displayCategoryLabel = occ.type; 
+          if (displayCategoryLabel === "Off-site Employees (On Duty)") {
+            displayCategoryLabel = "On Duty";
+          }
+
           let badgeColorStyle = "bg-indigo-50 text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-400";
+
+          // PERBAIKAN UTAMA: Ambil nilai grade mentah, pastikan di-pad otomatis menjadi 2 digit angka murni di frontend kartu kamar
+          let cleanGrade = occ.grade ? String(occ.grade).trim() : "-";
+          if (cleanGrade !== "-" && !isNaN(cleanGrade) && cleanGrade.length === 1) {
+            cleanGrade = cleanGrade.padStart(2, '0');
+          }
+          const extraMetaInfo = (occ.type !== "Guest") ? ` • ${cleanGrade} • ${occ.position || '-'}` : '';
 
           if (isFutureShadow) {
             displayCategoryLabel = "Reserve"; 
@@ -2623,7 +2618,8 @@
                     <span class="font-extrabold text-slate-900 dark:text-white text-xs">${occ.employee_name}</span>
                     <span class="text-[9px] font-black px-1.5 py-0.5 rounded-md tracking-wide uppercase ${badgeColorStyle}">${displayCategoryLabel}</span>
                   </div>
-                  <div class="text-[10px] text-slate-400 font-medium">${occ.employee_id}</div>
+                  <!-- PERBAIKAN: Cetak variabel extraMetaInfo tepat melekat di sebelah kanan ID karyawan -->
+                  <div class="text-[10px] text-slate-400 font-medium">${occ.employee_id}${extraMetaInfo}</div>
                   ${durationInfo}
                 </div>
                 <div class="flex flex-col items-end gap-3 shrink-0">
@@ -3433,8 +3429,22 @@
       
       document.getElementById("edit-occ-gender").value = dbGender;
       document.getElementById("edit-occ-type").value = occ.type;
-      document.getElementById("edit-occ-checkin").value = occ.check_in_date;
-      document.getElementById("edit-occ-checkout").value = occ.check_out_date || "";
+
+      // PERBAIKAN: Validasi dan konversi string tanggal ke format standar agar terbaca sempurna oleh input date HTML
+      if (occ.check_in_date) {
+        const rawCheckIn = occ.check_in_date.includes("T") ? occ.check_in_date.split("T")[0] : occ.check_in_date;
+        document.getElementById("edit-occ-checkin").value = rawCheckIn;
+      } else {
+        document.getElementById("edit-occ-checkin").value = "";
+      }
+
+      if (occ.check_out_date) {
+        const rawCheckOut = occ.check_out_date.includes("T") ? occ.check_out_date.split("T")[0] : occ.check_out_date;
+        document.getElementById("edit-occ-checkout").value = rawCheckOut;
+      } else {
+        document.getElementById("edit-occ-checkout").value = "";
+      }
+
       if (document.getElementById("edit-occ-remarks")) document.getElementById("edit-occ-remarks").value = occ.remarks || "";
       toggleEditFormFieldsByCategory(occ.type);
       document.getElementById("edit-occ-type").onchange = function() { toggleEditFormFieldsByCategory(this.value); };
@@ -3484,9 +3494,11 @@
       const bookingId = document.getElementById("edit-occ-booking-id").value;
       const source = document.getElementById("edit-occ-source").value;
 
-      // PERBAIKAN UTAMA: Interseptor pemformat angka tunggal Grade menjadi wajib 2 digit
-      const rawGrade = document.getElementById("edit-occ-grade").value.trim();
-      const formattedGrade = (rawGrade !== "" && !isNaN(rawGrade) && rawGrade.length === 1) ? rawGrade.padStart(2, '0') : rawGrade;
+      // PERBAIKAN UTAMA: Interseptor pemformat angka tunggal Grade wajib menjadi 2 digit murni sebelum dikirim ke Google Sheets
+      let rawGrade = document.getElementById("edit-occ-grade").value.trim();
+      if (rawGrade !== "" && !isNaN(rawGrade)) {
+        rawGrade = String(parseInt(rawGrade, 10)).padStart(2, '0');
+      }
 
       const payload = {
         action: "update_occupant",
@@ -3494,7 +3506,7 @@
         employee_name: document.getElementById("edit-occ-name").value,
         employee_id: document.getElementById("edit-occ-empid").value,
         position: document.getElementById("edit-occ-position").value,
-        grade: formattedGrade, // Menggunakan hasil format 2 digit (Contoh: 02)
+        grade: rawGrade, // Mengirimkan angka terformat 2 digit murni (Contoh: 01 atau 02)
         gender: document.getElementById("edit-occ-gender").value,
         check_in_date: document.getElementById("edit-occ-checkin").value,
         check_out_date: document.getElementById("edit-occ-checkout").value,
@@ -3902,7 +3914,15 @@
     function handleMutationSubmit(event) { event.preventDefault(); switchPage('assets'); }
     function populateWorkflowDropdowns() { const ast = document.getElementById("mutate-asset-id"); if(ast) ast.innerHTML = `<option value="">Select Assets</option>`; }
     function openLeaveModal(bkgId) { const occ = mockOccupants.find(o => o.booking_id === bkgId); if(!occ) return; document.getElementById("leave-booking-id").value = bkgId; document.getElementById("leave-emp-name").value = occ.employee_name; toggleLeaveModal(true); }
-    function toggleLeaveModal(show) { document.getElementById("leave-modal").classList.toggle("hidden", !show); }
+    
+    // PERBAIKAN: Jika modal leave ditutup, hilangkan backdrop room-detail secara simultan
+    function toggleLeaveModal(show) { 
+      document.getElementById("leave-modal").classList.toggle("hidden", !show); 
+      if (!show) {
+        document.getElementById("room-detail-modal").classList.add("hidden");
+        cameFromRoomDetail = false;
+      }
+    }
 
     function handleLeaveSubmit(event) {
       event.preventDefault();
@@ -3929,7 +3949,15 @@
     }
 
     function openExtendModal(bkgId) { const occ = mockOccupants.find(o => o.booking_id === bkgId); if(!occ) return; document.getElementById("extend-booking-id").value = bkgId; document.getElementById("extend-emp-name").value = occ.employee_name; toggleExtendModal(true); }
-    function toggleExtendModal(show) { document.getElementById("extend-modal").classList.toggle("hidden", !show); }
+    
+    // PERBAIKAN: Jika modal extend ditutup, hilangkan backdrop room-detail secara simultan
+    function toggleExtendModal(show) { 
+      document.getElementById("extend-modal").classList.toggle("hidden", !show); 
+      if (!show) {
+        document.getElementById("room-detail-modal").classList.add("hidden");
+        cameFromRoomDetail = false;
+      }
+    }
 
     function handleExtendSubmit(event) {
       event.preventDefault();
@@ -4615,13 +4643,14 @@ function toggleLoginPasswordView() {
 // SUNTIKAN KODE GLOBAL KEYBOARD SHORTCUTS: ENTER (SAVE) & ESC (CANCEL/CLOSE)
 // =========================================================================
 document.addEventListener("keydown", function(event) {
-  // 1. SHORTCUT TOMBOL ESC (UNTUK AKSI BACK / MUNDUR BERJENJANG BERDASARKAN CONTEXT)
   if (event.key === "Escape" || event.key === "Esc") {
     
-    // Urutan prioritas penutupan modal dari lapisan teratas (Lapis 3 -> Lapis 2 -> Lapis 1)
+    // PERBAIKAN: Masukkan leave-modal dan extend-modal ke dalam daftar penutupan prioritas ESC global
     const modalHierarchy = [
       "custom-photo-lightbox",
       "confirm-modal",
+      "leave-modal",
+      "extend-modal",
       "edit-occupant-modal",
       "booking-modal",
       "connect-asset-modal",
@@ -4643,7 +4672,14 @@ document.addEventListener("keydown", function(event) {
     if (activeModalId) {
       event.preventDefault();
       
-      if (activeModalId === "edit-occupant-modal") {
+      // PERBAIKAN: Jika pengguna menekan ESC saat modal leave atau extend aktif, picu fungsi toggle penutupan berjenjang
+      if (activeModalId === "leave-modal") {
+        toggleLeaveModal(false);
+      }
+      else if (activeModalId === "extend-modal") {
+        toggleExtendModal(false);
+      }
+      else if (activeModalId === "edit-occupant-modal") {
         // Ambil penanda context source sebelum modal ditutup
         const currentSource = document.getElementById("edit-occ-source").value;
         closeEditOccupantModal();
