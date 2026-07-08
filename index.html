@@ -488,11 +488,11 @@
         <input type="hidden" id="edit-occ-booking-id">
         <input type="hidden" id="edit-occ-source"> <!-- BARKAS PENGUNCI PHYSICAL SOURCE BARU -->
         <div>
-          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Full Name *</label>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Full Name *</label>
           <input type="text" id="edit-occ-name" required class="w-full text-xs px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none">
         </div>
         <div>
-          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Employee ID / Code *</label>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Employee ID / NIK *</label>
           <input type="text" id="edit-occ-empid" required class="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg focus:outline-none bg-white text-slate-800 dark:bg-slate-950 dark:text-white">
         </div>
 
@@ -500,11 +500,11 @@
         <div id="edit-occ-corporate-fields" class="space-y-4">
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Jabatan *</label>
+              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Position *</label>
               <input type="text" id="edit-occ-position" class="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg focus:outline-none bg-white text-slate-800 dark:bg-slate-950 dark:text-white">
             </div>
             <div>
-              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Grade *</label>
+              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Grade *</label>
               <input type="text" id="edit-occ-grade" class="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg focus:outline-none bg-white text-slate-800 dark:bg-slate-950 dark:text-white">
             </div>
           </div>
@@ -520,9 +520,10 @@
 
         <div>
           <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Category *</label>
-          <select id="edit-occ-type" required class="w-full text-xs px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-950 focus:outline-none">
+          <!-- PERBAIKAN 1: Mengubah nama opsi value menjadi On Duty murni -->
+          <select id="edit-occ-type" onchange="toggleEditOccupantFields()" required class="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white dark:bg-slate-950 text-slate-800 dark:text-white focus:outline-none">
             <option value="Active">Active</option>
-            <option value="Off-site Employees (On Duty)">Off-site Employees (On Duty)</option>
+            <option value="On Duty">On Duty</option>
             <option value="Guest">Guest</option>
           </select>
         </div>
@@ -537,9 +538,15 @@
             </div>
           </div>
 
-          <div class="mb-4 hidden" id="edit-occ-remarks-container">
-            <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wider">Remarks</label>
-            <textarea id="edit-occ-remarks" class="w-full h-16 text-xs px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-950 text-slate-800 dark:text-white focus:outline-none resize-none" placeholder="Occupant details..."></textarea>
+          <!-- PERBAIKAN POIN 2: Kolom dinamis terpisah mandiri untuk Guest Origin & Remarks -->
+          <div id="edit-occ-origin-container" class="hidden mb-3">
+            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Guest Origin *</label>
+            <input type="text" id="edit-occ-origin" placeholder="Example: SAI Sambutan, RPU Sangasanga, ARCO..." class="w-full text-xs px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-800 bg-white dark:bg-slate-950 dark:text-white focus:outline-none">
+          </div>
+
+          <div id="edit-occ-custom-remarks-container" class="hidden mb-3">
+            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Remarks *</label>
+            <textarea id="edit-occ-custom-remarks" placeholder="Provide extra details for entry purpose..." class="w-full text-xs px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-800 bg-white dark:bg-slate-950 dark:text-white focus:outline-none" rows="2"></textarea>
           </div>
 
           <div class="flex justify-end gap-3 mt-6">
@@ -827,7 +834,7 @@
     <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 max-w-md w-full p-6 mx-4 animate-fade-in">
       <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
         <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-          <i class="fa-solid fa-truck-ramp-box text-indigo-600"></i> Room Transfer Registry
+          <i class="fa-solid fa-truck-ramp-box text-indigo-600"></i> Transfer Occupant
         </h3>
         <button onclick="toggleTransferModal(false)" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
           <i class="fa-solid fa-xmark text-lg"></i>
@@ -838,15 +845,15 @@
         <input type="hidden" id="transfer-source" value="">
         <input type="hidden" id="transfer-booking-id">
         <div>
-          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Occupant Name</label>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Occupant Name</label>
           <input type="text" id="transfer-emp-name" disabled class="w-full text-sm px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-500 font-bold">
         </div>
         <div>
-          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Origin Room</label>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Origin Room</label>
           <input type="text" id="transfer-origin-name" disabled class="w-full text-sm px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-500 font-bold">
         </div>
         <div>
-          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Target Room (Available Slot) *</label>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Target Room (Available Slot) *</label>
           <select id="transfer-target-room-id" required class="w-full text-sm px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100 focus:outline-none"></select>
         </div>
         <div class="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
@@ -875,16 +882,22 @@
           <input type="text" id="leave-emp-name" disabled class="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-slate-950 rounded-lg text-slate-500 font-bold">
         </div>
         <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Leave Starts *</label>
-            <input type="date" id="leave-start" required class="w-full text-xs px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-lg">
+            <div>
+              <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Leave Starts *</label>
+              <input type="date" id="leave-start" class="w-full text-xs px-3.5 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Return Onsite *</label>
+              <input type="date" id="leave-end" class="w-full text-xs px-3.5 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
+            </div>
           </div>
+
           <div>
-            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Return Onsite *</label>
-            <input type="date" id="leave-end" required class="w-full text-xs px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-lg">
+            <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Leave Notes / Remarks</label>
+            <textarea id="leave-notes" rows="2" placeholder="Tulis alasan leave..." class="w-full text-xs px-3.5 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all resize-none"></textarea>
           </div>
-        </div>
-        <div class="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
+          
+          <div class="flex justify-end gap-3 pt-2">
           <button type="button" onclick="toggleLeaveModal(false)" class="px-4 py-2 text-xs bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-lg">Cancel</button>
           <button type="submit" class="px-5 py-2 text-xs bg-indigo-600 text-white font-bold rounded-lg shadow-sm">Save Leave Info</button>
         </div>
@@ -913,6 +926,11 @@
           <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">New Estimated Checkout *</label>
           <input type="date" id="extend-checkout" required class="w-full text-xs px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-lg bg-white text-slate-800 focus:outline-none">
         </div>
+        <!-- PERBAIKAN POIN 4: Penambahan kolom remarks/note alasan perpanjangan stay -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Extend Notes / Reason</label>
+          <textarea id="extend-notes" placeholder="Tulis alasan perpanjangan stay..." class="w-full text-xs px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none text-slate-800 bg-white" rows="2"></textarea>
+        </div>
         <div class="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
           <button type="button" onclick="toggleExtendModal(false)" class="px-4 py-2 text-xs bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-lg">Cancel</button>
           <button type="submit" class="px-5 py-2 text-xs bg-indigo-600 text-white font-bold rounded-lg shadow-sm">Extend Duration</button>
@@ -923,85 +941,91 @@
 
   <!-- BOOKING & CHECK-IN MODAL -->
   <div id="booking-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden">
-    <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 max-w-xl w-full p-6 mx-4 max-h-[90vh] overflow-y-auto animate-fade-in">
-      <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
-        <h3 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 max-w-xl w-full flex flex-col mx-4 max-h-[85vh] overflow-hidden relative animate-fade-in">
+      
+      <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 p-5 shrink-0">
+        <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
           <i class="fa-solid fa-user-plus text-indigo-600"></i> <span id="booking-title-text">Check-In / Reservation</span>
         </h3>
-        <button onclick="toggleBookingModal(false)" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+        <button onclick="toggleBookingModal(false)" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 w-8 h-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-colors">
           <i class="fa-solid fa-xmark text-lg"></i>
         </button>
       </div>
-      <form id="booking-form" onsubmit="handleBookingSubmit(event)" class="space-y-4">
+
+      <div class="flex-1 overflow-y-auto p-5 space-y-4" style="scrollbar-width: thin;">
+        <form id="booking-form" onsubmit="handleBookingSubmit(event)" class="space-y-4">
         <input type="hidden" id="booking-location-id">
         <input type="hidden" id="booking-source" value="">
         <div>
-          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Room Name</label>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Room Name</label>
           <input type="text" id="booking-room-name" disabled class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-500 font-bold">
         </div>
         <div>
-          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Occupant Full Name *</label>
-          <input type="text" id="booking-emp-name" required placeholder="Example: Andi Wijaya" class="w-full text-sm px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 text-slate-800">
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Occupant Full Name *</label>
+          <input type="text" id="booking-emp-name" required placeholder="Example: John Doe" class="w-full text-sm px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 text-slate-800">
         </div>
         <div>
-          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Employee ID / NIK *</label>
-          <input type="text" id="booking-emp-id" required placeholder="Example: 99120" class="w-full text-sm px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 text-slate-800">
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Employee ID / NIK *</label>
+          <input type="text" id="booking-emp-id" required placeholder="Example: 2023001" class="w-full text-sm px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 text-slate-800">
         </div>
 
-        <!-- SUNTIKAN DINAMIS: SELEKTOR KOLOM JABATAN, GRADE, GENDER PADA CHECK-IN -->
         <div id="booking-corporate-fields" class="space-y-4">
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Jabatan *</label>
-              <input type="text" id="booking-position" placeholder="Example: Operator" class="w-full text-sm px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 text-slate-800 bg-white dark:bg-slate-900 dark:text-white">
+              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Position *</label>
+              <input type="text" id="booking-position" placeholder="Example: Admin GA" class="w-full text-sm px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 text-slate-800 bg-white dark:bg-slate-900 dark:text-white">
             </div>
             <div>
-              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Grade *</label>
-              <input type="text" id="booking-grade" placeholder="Example: G4" class="w-full text-sm px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 text-slate-800 bg-white dark:bg-slate-900 dark:text-white">
+              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Grade *</label>
+              <input type="text" id="booking-grade" placeholder="Example: 1 or 13" class="w-full text-sm px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 text-slate-800 bg-white dark:bg-slate-900 dark:text-white">
             </div>
           </div>
         </div>
         
         <div>
-          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Gender *</label>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Gender *</label>
           <select id="booking-gender" required class="w-full text-sm px-3 py-2 border border-slate-200 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-white focus:outline-none">
             <option value="Male">Male</option>
             <option value="Female">Female</option>
           </select>
         </div>
 
-        <!-- SUNTIKAN BARU: Wadah Tambahan untuk Tamu ke-2, ke-3, dst -->
         <div id="multi-booking-container" class="space-y-3 pt-1"></div>
 
-        <!-- SUNTIKAN BARU: Tombol Interaktif untuk Menambah Baris Tamu Rombongan -->
         <div class="pt-1">
           <button type="button" onclick="addNewGuestRowToForm()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg text-[11px] transition-all flex items-center gap-1">
-            <i class="fa-solid fa-user-plus text-indigo-600"></i> + Add More Guest
+            <i class="fa-solid fa-user-plus text-indigo-600"></i> + Add Additional Guest
           </button>
         </div>
 
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Entry Date *</label>
+            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Check-In Date *</label>
             <input type="date" id="booking-checkin" required class="w-full text-sm px-3 py-2 border border-slate-200 rounded-lg text-slate-800">
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Category *</label>
+            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Category *</label>
             <select id="booking-sub-type" onchange="toggleBookingSubTypeInputs()" required class="w-full text-sm px-3 py-2 border border-slate-200 rounded-lg text-slate-800 bg-white dark:bg-slate-900 focus:outline-none">
               <option value="Active">Active</option>
-              <option value="Off-site Employees (On Duty)">Off-site Employees (On Duty)</option>
+              <option value="On Duty">On Duty</option>
               <option value="Guest">Guest</option>
             </select>
           </div>
         </div>
+
+        <!-- PERBAIKAN: Membuka kunci container dan menetapkan ID murni yang sinkron dengan penangkap JavaScript -->
+        <div id="guest-origin-container" class="mb-2">
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Guest Origin</label>
+          <input type="text" id="booking-guest-origin" placeholder="Example: RPU Samarinda, SAI Samarinda, Trakindo, ARCO, etc..." class="w-full text-sm px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-800 dark:bg-slate-950 dark:text-white focus:outline-none">
+        </div>
         
         <div id="checkout-date-container">
-          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Estimated Departure *</label>
-          <input type="date" id="booking-checkout" class="w-full text-sm px-3 py-2 border border-slate-200 rounded-lg text-slate-800">
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Estimated Check-Out *</label>
+          <input type="date" id="booking-checkout" class="w-full text-sm px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-800 dark:bg-slate-950 dark:text-white">
         </div>
-        <div id="remarks-container" class="hidden">
-          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Remarks *</label>
-          <textarea id="booking-remarks" placeholder="Provide extra details for off-site duty / guest entry purpose..." class="w-full text-sm px-3 py-2 border border-slate-200 rounded-lg text-slate-800"></textarea>
+        <div id="remarks-container" class="mb-2">
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Remarks</label>
+          <textarea id="booking-remarks" placeholder="Example: Support pekerjaan civil, backup Rita cuti, etc..." class="w-full text-sm px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-800 dark:bg-slate-950 dark:text-white focus:outline-none" rows="2"></textarea>
         </div>
 
         <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
@@ -1009,8 +1033,7 @@
           <button type="submit" class="px-5 py-2 text-xs bg-indigo-600 text-white font-bold rounded-lg shadow-sm">Add Occupant</button>
         </div>
       </form>
-    </div>
-  </div>
+    </div> </div> </div>
 
   <!-- SIDEBAR NAVIGATION PANEL (PERBAIKAN POIN 1: ANTI GLITCH SIGN OUT) -->
   <div id="main-app-wrapper" class="flex flex-1 overflow-hidden hidden">
@@ -1363,8 +1386,8 @@
                 
                 <!-- SUNTIKAN BARU: LIVE TELEMETRY BEDS YANG MENYESUAIKAN FILTER AKTIF -->
                 <div id="filter-beds-telemetry" class="flex items-center gap-2.5 text-[11px] font-bold pl-2 border-l border-slate-200 dark:border-slate-700">
-                  <span class="text-slate-500">Filtered:</span>
-                  <span class="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-md">Beds: <span id="lbl-flt-beds-total" class="font-extrabold text-indigo-600 dark:text-indigo-400">0</span></span>
+                  <span class="text-slate-500">Beds Summary :</span>
+                  <span class="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-md">Beds: <span id="lbl-flt-beds-total" class="font-extrabold text-slate-600 dark:text-slate-400">0</span></span>
                   <span class="bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-md">Occupied: <span id="lbl-flt-beds-occupied" class="font-extrabold">0</span></span>
                   <span class="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-md">Available: <span id="lbl-flt-beds-available" class="font-extrabold">0</span></span>
                 </div>
@@ -1379,7 +1402,7 @@
 
             <!-- BARIS 1: FILTER STATUS GLOBAL -->
             <div class="flex items-center gap-1.5 text-[10px] font-bold select-none flex-wrap">
-              <span class="text-slate-400 font-semibold mr-1 w-20 block">Filter Status:</span>
+              <span class="text-slate-400 font-semibold mr-1 w-20 block">Status :</span>
               <button type="button" onclick="setRoomStatusFilterGlobal('All')" id="flt-room-status-All" class="px-2.5 py-1 rounded bg-indigo-600 text-white border border-indigo-500 shadow-sm transition-colors">All</button>
               <button type="button" onclick="setRoomStatusFilterGlobal('Ready')" id="flt-room-status-Ready" class="px-2.5 py-1 rounded bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 transition-colors">Ready</button>
               <button type="button" onclick="setRoomStatusFilterGlobal('Full')" id="flt-room-status-Full" class="px-2.5 py-1 rounded bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 transition-colors">Full</button>
@@ -1399,7 +1422,7 @@
 
             <!-- BARIS 3: FILTER SUB-BLOK AREA (GARIS BORDER-T DIHAPUS) -->
             <div id="sub-block-filter-wrapper" class="flex flex-wrap items-center gap-1.5 text-[10px] font-bold select-none pt-0.5 mt-0">
-              <span class="text-slate-400 font-semibold mr-1 w-20 block">Sub-Block Area:</span>
+              <span class="text-slate-400 font-semibold mr-1 w-20 block">Sub-Blok Area:</span>
               <div id="sub-block-buttons-render" class="flex flex-wrap gap-1.5"></div>
             </div>
 
@@ -1672,6 +1695,9 @@
     let activeMaintFloorFilter = "All";
     let activeMaintStatusFilter = "All";
     let cameFromMaintDetail = false; 
+    
+    // PERBAIKAN MUTLAK: Mengunci interupsi re-render otomatis saat proses konfirmasi berantai berjalan
+    let isCutiBackModalOpen = false;
 
     // --- SUNTIKAN STATE BARU: PAGINATION & SUB-BLOK FILTER (AMMAN) ---
     let roomCurrentPage = 1;
@@ -1685,7 +1711,7 @@
     // =========================================================================
     // SUNTIKAN ENDPOINT URL API UNTUK SINKRONISASI GO-LIVE GOOGLE SHEETS
     // =========================================================================
-    const API_URL = "https://script.google.com/macros/s/AKfycbwN13yalzyjxVGp4ndYmixGnCKKmPiP2Ao212Loh8gaLTx3k8jF5qkxNQUJkTnUv_w9/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbxKlYpJ2g8W-qVGRcngOn9TQFwX58Dy8nnIf-f0qC78tsIwvhkUfhVb2iGY8AW85ziQ/exec";
 
     // =========================================================================
     // PERBAIKAN POIN 3: MENYELARASKAN DATA KUNCI AKUN MENJADI HURUF KECIL (LOWERCASE)
@@ -2011,7 +2037,8 @@
     let activeConfirmCallback = null;
     function openCustomConfirm(title, message, callback) {
       document.getElementById("confirm-title").textContent = title;
-      document.getElementById("confirm-message").textContent = message;
+      // PERBAIKAN: Menggunakan innerHTML agar tag HTML form date picker dirender menjadi komponen visual, bukan teks mentah
+      document.getElementById("confirm-message").innerHTML = message;
       document.getElementById("confirm-modal").classList.remove("hidden");
       activeConfirmCallback = callback;
     }
@@ -2362,7 +2389,8 @@
 
         countAll++;
         const occupants = mockOccupants.filter(o => o.location_id === loc.location_id && (o.status === "Active" || o.status === "Reserve" || o.status === "Reserved"));
-        const activeOnsiteCount = occupants.filter(o => o.status === "Active" && !o.is_on_leave).length;
+        // PERBAIKAN: Selama status utama dari Sheets bernilai "Active", kasur tetap dihitung occupied (terisi)
+        const activeOnsiteCount = occupants.filter(o => o.status === "Active").length;
         const capacity = parseInt(loc.capacity || 4);
         
         if (loc.status === "Broken") countBroken++;
@@ -2446,9 +2474,9 @@
           }
         }
 
-        // PERBAIKAN: Mengeluarkan status "Checked-Out" secara mutlak dari denah KPI map atas
         const occupants = mockOccupants.filter(o => o.location_id === loc.location_id && o.status !== "Checked-Out" && o.status !== "");
-        const activeOnsiteCount = occupants.filter(o => o.status === "Active" && !o.is_on_leave).length;
+        // PERBAIKAN: Hitung murni status "Active" dari sheet Occupants tanpa dikurangi bendera is_on_leave
+        const activeOnsiteCount = occupants.filter(o => o.status === "Active").length;
         const capacity = parseInt(loc.capacity || 4);
         
         let dynamicStatus = loc.status;
@@ -2491,7 +2519,7 @@
       paginatedMapRooms.forEach(loc => {
         const capacity = parseInt(loc.capacity || 4);
         const occupants = mockOccupants.filter(o => o.location_id === loc.location_id && (o.status === "Active" || o.status === "Reserve" || o.status === "Reserved"));
-        const activeOnsiteCount = occupants.filter(o => o.status === "Active" && !o.is_on_leave).length;
+        const activeOnsiteCount = occupants.filter(o => o.status === "Active").length;
 
         let resolvedStatus = loc.status;
         if (loc.status === "Ready" && activeOnsiteCount >= capacity) resolvedStatus = "Full";
@@ -2542,9 +2570,9 @@
       // Render kartu detail bawah secara lossless
       baseFiltered.forEach(loc => {
         const capacity = parseInt(loc.capacity || 4);
-        // PERBAIKAN: Mengeluarkan status "Checked-Out" secara mutlak dari render list kartu kamar bawah
         const occupants = mockOccupants.filter(o => o.location_id === loc.location_id && o.status !== "Checked-Out" && o.status !== "");
-        const activeOnsiteCount = occupants.filter(o => o.status === "Active" && !o.is_on_leave).length;
+        // PERBAIKAN: Kunci hitungan kasur kartu kamar bawah menggunakan status "Active" murni
+        const activeOnsiteCount = occupants.filter(o => o.status === "Active").length;
 
         let resolvedStatus = loc.status;
         if (loc.status === "Ready" && activeOnsiteCount >= capacity) resolvedStatus = "Full";
@@ -2579,36 +2607,64 @@
           }
           const extraMetaInfo = (occ.type !== "Guest") ? ` • ${cleanGrade} • ${occ.position || '-'}` : '';
 
+          // Normalisasi nama label category di frontend kartu kamar
+          let cleanDisplayType = occ.type;
+          if (cleanDisplayType === "Off-site Employees (On Duty)") {
+            cleanDisplayType = "On Duty";
+          }
+
           if (isFutureShadow) {
-            displayCategoryLabel = "Reserve"; 
+            // PERBAIKAN: Tambahkan cetakan isi kolom guest_origin di sebelah kanan label reserve
+            displayCategoryLabel = occ.guest_origin ? "Reserve • " + occ.guest_origin : "Reserve"; 
             badgeColorStyle = "bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400";
           } else if (occ.type === "Guest") {
+            // PERBAIKAN POIN 2: Menarik data murni guest_origin murni di belakang kata kategori visual
+            displayCategoryLabel = occ.guest_origin ? "Guest • " + occ.guest_origin : "Guest";
             badgeColorStyle = "bg-purple-100/70 text-purple-700 dark:bg-purple-950 dark:text-purple-300"; 
-          } else if (occ.type === "Off-site Employees (On Duty)") {
+          } else if (occ.type === "On Duty" || occ.type === "Off-site Employees (On Duty)") {
+            // PERBAIKAN POIN 2: Menarik data murni guest_origin murni di belakang kata kategori visual
+            displayCategoryLabel = occ.guest_origin ? "On Duty • " + occ.guest_origin : "On Duty";
             badgeColorStyle = "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200/40 font-bold"; 
           }
 
           let durationInfo = "";
           const isEmployeeActive = (occ.type === "Active" && !isFutureShadow);
           if (isEmployeeActive) {
-            if (occ.is_on_leave) {
-              durationInfo = `<div class="text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-1"><i class="fa-solid fa-plane-departure mr-1 text-slate-400"></i>Leave until: <span class="font-semibold text-slate-700 dark:text-slate-300">${formatDateDDMMMYYYY(occ.leave_end_date)}</span></div>`;
+            // PERBAIKAN POIN 2: Menampilkan tanggal Leave Start & Leave Until secara interaktif di kartu kamar
+            if (occ.is_on_leave === true || occ.is_on_leave === "TRUE") {
+              const leaveStartFormatted = occ.leave_start_date ? formatDateDDMMMYYYY(occ.leave_start_date) : "-";
+              const leaveEndFormatted = occ.leave_end_date ? formatDateDDMMMYYYY(occ.leave_end_date) : "-";
+              
+              durationInfo = `
+                <div class="text-[10px] text-amber-600 dark:text-amber-400 space-y-0.5 mt-1 font-sans font-medium">
+                  <div class="flex items-center gap-1"><i class="fa-solid fa-plane-departure text-[9px] w-3.5 text-slate-400"></i>Leave Start: <span class="font-bold text-slate-700 dark:text-slate-300">${leaveStartFormatted}</span></div>
+                  <div class="flex items-center gap-1"><i class="fa-solid fa-plane-arrival text-[9px] w-3.5 text-slate-400"></i>Leave Until: <span class="font-bold text-slate-700 dark:text-slate-300">${leaveEndFormatted}</span></div>
+                </div>`;
             }
           } else {
             durationInfo = `
               <div class="text-[10px] text-slate-500 dark:text-slate-400 space-y-0.5 mt-1 font-sans">
                 <div><i class="fa-solid fa-calendar-check mr-1.5 text-slate-400"></i>Check-In: <span class="font-semibold text-slate-600 dark:text-slate-300">${formatDateDDMMMYYYY(occ.check_in_date)}</span></div>
-                <div><i class="fa-solid fa-clock mr-1.5 text-slate-400"></i>Est. Departure: <span class="font-semibold text-indigo-600 dark:text-indigo-400">${formatDateDDMMMYYYY(occ.check_out_date)}</span></div>
+                <div><i class="fa-solid fa-clock mr-1.5 text-slate-400"></i>Est. Check-Out: <span class="font-semibold text-indigo-600 dark:text-indigo-400">${formatDateDDMMMYYYY(occ.check_out_date)}</span></div>
               </div>`;
           }
 
           let extendBtn = (!isEmployeeActive) ? `<button onclick="openExtendModal('${occ.booking_id}')" class="text-[10px] text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 font-bold hover:underline transition-all">Extend</button>` : "";
           let leaveBtn = (isEmployeeActive && !occ.is_on_leave) ? `<button onclick="openLeaveModal('${occ.booking_id}')" class="text-[10px] text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 font-bold hover:underline transition-all">Set Leave</button>` : "";
-          if (occ.is_on_leave && !isFutureShadow) {
-            leaveBtn = `<button onclick="handleToggleCutiBack('${occ.booking_id}')" class="text-[10px] text-emerald-600 hover:text-emerald-800 dark:text-emerald-400 font-bold hover:underline transition-all">Kembali Onsite</button>`;
+          if ((occ.is_on_leave === true || occ.is_on_leave === "TRUE") && !isFutureShadow) {
+            // SUNTIKAN: Menyisipkan tombol Batal Leave berwarna merah tegas secara sejajar
+            leaveBtn = `
+              <button onclick="openLeaveModal('${occ.booking_id}')" class="text-[10px] text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 font-bold hover:underline transition-all mr-2">Edit Leave</button>
+              <button onclick="handleCancelLeave('${occ.booking_id}')" class="text-[10px] text-rose-600 hover:text-rose-800 font-bold hover:underline transition-all mr-2">Batal Leave</button>
+              <button onclick="handleToggleCutiBack('${occ.booking_id}')" class="text-[10px] text-emerald-600 hover:text-emerald-800 dark:text-emerald-400 font-bold hover:underline transition-all">Kembali Onsite</button>
+            `;
           }
 
-          const shadowContainerClass = isFutureShadow ? "opacity-50 bg-slate-100/40 border-dashed dark:bg-slate-900/40 animate-pulse" : (occ.is_on_leave ? 'opacity-40 bg-slate-100/60 border-dashed' : 'bg-slate-50 dark:bg-slate-950');
+          // PERBAIKAN: Evaluasi cuti aktif hanya jika is_on_leave bernilai true DAN tanggal mulai cuti sudah hari ini atau masa lampau
+          const isCurrentlyLeaveActive = occ.is_on_leave && (occ.leave_start_date ? occ.leave_start_date <= systemTodayStr : true);
+
+          // Gunakan isCurrentlyLeaveActive sebagai penentu opacity-40 (redup)
+          const shadowContainerClass = isFutureShadow ? "opacity-50 bg-slate-100/40 border-dashed dark:bg-slate-900/40 animate-pulse" : (isCurrentlyLeaveActive ? 'opacity-40 bg-slate-100/60 border-dashed' : 'bg-slate-50 dark:bg-slate-950');
 
           occupantsHtml += `
             <div class="p-3 border border-slate-200 dark:border-slate-800 rounded-xl flex flex-col gap-1 ${shadowContainerClass} shadow-xs">
@@ -3207,7 +3263,7 @@
               <span class="text-[9px] px-1.5 py-0.5 rounded font-bold ${labelColorDetail}">${labelTextDetail}</span>
               <button type="button" onclick="openEditOccupantModal('${occ.booking_id}', 'room-detail')" title="Edit Occupant" class="text-indigo-600 p-1 transition-transform hover:scale-110"><i class="fa-solid fa-user-pen text-sm"></i></button>
               <button type="button" onclick="toggleRoomDetailModal(false); handleCheckout('${occ.booking_id}', 'room-detail')" title="Checkout Occupant" class="text-rose-600 p-1 transition-transform hover:scale-110"><i class="fa-solid fa-user-minus text-sm"></i></button>
-              <button type="button" onclick="toggleRoomDetailModal(false); openTransferModal('${occ.booking_id}','${occ.employee_name}','${loc.name}', 'room-detail')" title="Move Occupant (Pindah Kamar)" class="text-amber-600 p-1 transition-transform hover:scale-110"><i class="fa-solid fa-truck-ramp-box text-sm"></i></button>
+              <button type="button" onclick="toggleRoomDetailModal(false); openTransferModal('${occ.booking_id}','${occ.employee_name}','${loc.name}', 'room-detail')" title="Transfer Occupant" class="text-amber-600 p-1 transition-transform hover:scale-110"><i class="fa-solid fa-truck-ramp-box text-sm"></i></button>
             </div>
           `;
           occupantsList.appendChild(div);
@@ -3420,34 +3476,29 @@
       document.getElementById("edit-occ-position").value = occ.position || ""; 
       document.getElementById("edit-occ-grade").value = occ.grade || "";       
       
-      // Standardisasi konversi kapitalisasi huruf agar terbaca sempurna oleh elemen tag select option
       let dbGender = occ.gender ? occ.gender.trim() : "Male";
-      if (dbGender.toLowerCase() === "Male") dbGender = "Male";
-      if (dbGender.toLowerCase() === "Female") dbGender = "Female";
-      // Buat huruf pertama menjadi Kapital besar murni (Male / Female)
       dbGender = dbGender.charAt(0).toUpperCase() + dbGender.slice(1).toLowerCase();
-      
       document.getElementById("edit-occ-gender").value = dbGender;
-      document.getElementById("edit-occ-type").value = occ.type;
+      
+      // Sinkronisasi data type category murni
+      let dbType = occ.type || "Active";
+      if (dbType === "Off-site Employees (On Duty)") { dbType = "On Duty"; }
+      document.getElementById("edit-occ-type").value = dbType;
 
-      // PERBAIKAN: Validasi dan konversi string tanggal ke format standar agar terbaca sempurna oleh input date HTML
       if (occ.check_in_date) {
-        const rawCheckIn = occ.check_in_date.includes("T") ? occ.check_in_date.split("T")[0] : occ.check_in_date;
-        document.getElementById("edit-occ-checkin").value = rawCheckIn;
-      } else {
-        document.getElementById("edit-occ-checkin").value = "";
+        document.getElementById("edit-occ-checkin").value = occ.check_in_date.split("T")[0];
       }
-
       if (occ.check_out_date) {
-        const rawCheckOut = occ.check_out_date.includes("T") ? occ.check_out_date.split("T")[0] : occ.check_out_date;
-        document.getElementById("edit-occ-checkout").value = rawCheckOut;
-      } else {
-        document.getElementById("edit-occ-checkout").value = "";
+        document.getElementById("edit-occ-checkout").value = occ.check_out_date.split("T")[0];
       }
 
-      if (document.getElementById("edit-occ-remarks")) document.getElementById("edit-occ-remarks").value = occ.remarks || "";
-      toggleEditFormFieldsByCategory(occ.type);
-      document.getElementById("edit-occ-type").onchange = function() { toggleEditFormFieldsByCategory(this.value); };
+      // PERBAIKAN POIN 2: Mapping data Guest Origin & Remarks kustom dari Cloud murni tanpa tercampur
+      if (dbType === "On Duty" || dbType === "Guest") {
+        if(document.getElementById("edit-occ-origin")) document.getElementById("edit-occ-origin").value = occ.guest_origin || "";
+        if(document.getElementById("edit-occ-custom-remarks")) document.getElementById("edit-occ-custom-remarks").value = occ.remarks || "";
+      }
+
+      toggleEditOccupantFields(); // Jalankan auto-trigger pemetaan visual saat modal muncul
       document.getElementById("edit-occupant-modal").classList.remove("hidden");
     }
 
@@ -3472,6 +3523,50 @@
       if (remarksContainer) remarksContainer.classList.remove("hidden");
       if (category === "Active") checkoutContainer?.classList.add("hidden");
       else checkoutContainer?.classList.remove("hidden");
+    }
+
+    // =========================================================================
+    // PERBAIKAN POIN 2: MELETAKKAN FUNGSI KONTROL LOGIKAL DAN VISUAL EDIT OCCUPANT DI SINI
+    // =========================================================================
+    function toggleEditOccupantFields() {
+      const type = document.getElementById("edit-occ-type").value;
+      const checkoutContainer = document.getElementById("edit-occ-checkout-container");
+      const originContainer = document.getElementById("edit-occ-origin-container");
+      const remarksContainer = document.getElementById("edit-occ-custom-remarks-container");
+      const corporateFields = document.getElementById("edit-occ-corporate-fields");
+      
+      const originInput = document.getElementById("edit-occ-origin");
+      const remarksInput = document.getElementById("edit-occ-custom-remarks");
+      const posInput = document.getElementById("edit-occ-position");
+      const gradeInput = document.getElementById("edit-occ-grade");
+
+      if (type === "On Duty" || type === "Guest") {
+        originContainer?.classList.remove("hidden");
+        originInput?.setAttribute("required", "required");
+        remarksContainer?.classList.remove("hidden");
+        remarksInput?.setAttribute("required", "required");
+        checkoutContainer?.classList.remove("hidden");
+        
+        // Sembunyikan kolom korporat jika tipenya Guest
+        if (type === "Guest") {
+          corporateFields?.classList.add("hidden");
+          if(posInput) posInput.required = false;
+          if(gradeInput) gradeInput.required = false;
+        } else {
+          corporateFields?.classList.remove("hidden");
+          if(posInput) posInput.required = true;
+          if(gradeInput) gradeInput.required = true;
+        }
+      } else {
+        originContainer?.classList.add("hidden");
+        originInput?.removeAttribute("required");
+        remarksContainer?.classList.add("hidden");
+        remarksInput?.removeAttribute("required");
+        checkoutContainer?.classList.add("hidden");
+        corporateFields?.classList.remove("hidden");
+        if(posInput) posInput.required = true;
+        if(gradeInput) gradeInput.required = true;
+      }
     }
 
     function closeEditOccupantModal() {
@@ -3506,12 +3601,14 @@
         employee_name: document.getElementById("edit-occ-name").value,
         employee_id: document.getElementById("edit-occ-empid").value,
         position: document.getElementById("edit-occ-position").value,
-        grade: rawGrade, // Mengirimkan angka terformat 2 digit murni (Contoh: 01 atau 02)
+        grade: rawGrade,
         gender: document.getElementById("edit-occ-gender").value,
         check_in_date: document.getElementById("edit-occ-checkin").value,
         check_out_date: document.getElementById("edit-occ-checkout").value,
         type: document.getElementById("edit-occ-type").value,
-        remarks: document.getElementById("edit-occ-remarks").value || ""
+        // PERBAIKAN POIN 2: Memisahkan value input agar terekam ke kolom masing-masing secara independen
+        guest_origin: document.getElementById("edit-occ-origin").value || "",
+        remarks: document.getElementById("edit-occ-custom-remarks").value || ""
       };
 
       document.getElementById("edit-occupant-modal").classList.add("hidden");
@@ -3590,7 +3687,9 @@
       const payload = {
         action: "transfer_occupant",
         booking_id: document.getElementById("transfer-booking-id").value,
-        target_location_id: document.getElementById("transfer-target-room-id").value
+        target_location_id: document.getElementById("transfer-target-room-id").value,
+        // POIN 1: Kirim nama operator penanggung jawab mutasi kamar menuju API
+        operator_name: (currentUser && currentUser.name) ? currentUser.name : "System Admin"
       };
       document.getElementById("transfer-occupant-modal").classList.add("hidden");
       showToast("Processing room mutation in cloud...", "info");
@@ -3620,7 +3719,13 @@
         
         fetch(API_URL, {
           method: "POST",
-          body: JSON.stringify({ action: "checkout_occupant", booking_id: bkgId, check_out_date: todayStr })
+          body: JSON.stringify({ 
+            action: "checkout_occupant", 
+            booking_id: bkgId, 
+            check_out_date: todayStr,
+            // PERBAIKAN POIN 3: Teruskan data nama operator pelaksana kuncian checkout
+            operator_name: (currentUser && currentUser.name) ? currentUser.name : "System Admin"
+          })
         })
         .then(res => res.json())
         .then(data => {
@@ -3654,15 +3759,15 @@
         <button type="button" onclick="document.getElementById('${uniqueRowId}').remove()" class="absolute top-2 right-2 text-rose-500 hover:text-rose-700 text-xs font-bold p-1">
           <i class="fa-solid fa-trash-can"></i> Remove
         </button>
-        <span class="text-[10px] font-black text-indigo-600 uppercase tracking-wider block mb-1">Guest Data (Tamu Tambahan)</span>
+        <span class="text-[10px] font-black text-indigo-600 tracking-wider block mb-1">Additional Guest Information</span>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
           <div>
             <label class="block font-semibold text-slate-500 mb-0.5">Occupant Full Name *</label>
-            <input type="text" placeholder="Tamu Rombongan Name" class="multi-guest-name w-full text-xs px-2.5 py-1.5 border border-slate-200 rounded-lg focus:outline-none text-slate-800" required>
+            <input type="text" placeholder="Example: John Doe" class="multi-guest-name w-full text-xs px-2.5 py-1.5 border border-slate-200 rounded-lg focus:outline-none text-slate-800" required>
           </div>
           <div>
             <label class="block font-semibold text-slate-500 mb-0.5">Employee ID / NIK *</label>
-            <input type="text" placeholder="Tamu Rombongan NIK" class="multi-guest-id w-full text-xs px-2.5 py-1.5 border border-slate-200 rounded-lg focus:outline-none text-slate-800" required>
+            <input type="text" placeholder="Example: 2023001" class="multi-guest-id w-full text-xs px-2.5 py-1.5 border border-slate-200 rounded-lg focus:outline-none text-slate-800" required>
           </div>
         </div>
         
@@ -3670,12 +3775,12 @@
         <div class="multi-guest-corp-block grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs mt-1 ${hideCorporateFieldsClass}">
           <div>
             <label class="block font-semibold text-slate-500 mb-0.5">Jabatan *</label>
-            <input type="text" placeholder="Jabatan" class="multi-guest-position w-full text-xs px-2.5 py-1.5 border border-slate-200 rounded-lg focus:outline-none text-slate-800" ${currentMainCategory !== "Guest" ? "required" : ""}>
+            <input type="text" placeholder="Example: Admin GA" class="multi-guest-position w-full text-xs px-2.5 py-1.5 border border-slate-200 rounded-lg focus:outline-none text-slate-800" ${currentMainCategory !== "Guest" ? "required" : ""}>
           </div>
           <div>
             <label class="block font-semibold text-slate-500 mb-0.5">Grade *</label>
             <!-- PERBAIKAN: Suntik fungsi onblur untuk auto-padding menjadi 2 digit secara real-time saat admin selesai mengetik -->
-            <input type="text" placeholder="Contoh: 2 -> 02" onblur="if(this.value.trim() !== '' && !isNaN(this.value.trim()) && this.value.trim().length === 1) { this.value = this.value.trim().padStart(2, '0'); }" class="multi-guest-grade w-full text-xs px-2.5 py-1.5 border border-slate-200 rounded-lg focus:outline-none text-slate-800" ${currentMainCategory !== "Guest" ? "required" : ""}>
+            <input type="text" placeholder="Example: 1 or 13" onblur="if(this.value.trim() !== '' && !isNaN(this.value.trim()) && this.value.trim().length === 1) { this.value = this.value.trim().padStart(2, '0'); }" class="multi-guest-grade w-full text-xs px-2.5 py-1.5 border border-slate-200 rounded-lg focus:outline-none text-slate-800" ${currentMainCategory !== "Guest" ? "required" : ""}>
           </div>
         </div>
 
@@ -3764,7 +3869,10 @@
 
       let successCount = 0;
 
-      // 2. Loop Sequential Fetch (Menembak data antrean satu per satu secara lossless)
+      // Ambil nilai murni langsung dari masing-masing elemen ID input box form UI luar
+      const actualGuestOrigin = document.getElementById("booking-guest-origin") ? document.getElementById("booking-guest-origin").value.trim() : "";
+      const actualRemarks = document.getElementById("booking-remarks") ? document.getElementById("booking-remarks").value.trim() : "";
+
       for (let i = 0; i < guestList.length; i++) {
         const payload = {
           action: "create_booking",
@@ -3778,9 +3886,11 @@
           check_out_date: checkoutDate,
           status: statusText,
           type: subType,
-          remarks: remarksText
+          guest_origin: actualGuestOrigin, 
+          remarks: actualRemarks,
+          // PERBAIKAN: Teruskan nama operator yang sedang login saat ini (misal: asun, doni, ester)
+          operator_name: (currentUser && currentUser.name) ? currentUser.name : "System Admin"
         };
-        // ... (sisa loop fetch ke bawah biarkan tetap utuh)
 
         try {
           const response = await fetch(API_URL, { method: "POST", body: JSON.stringify(payload) });
@@ -3812,22 +3922,31 @@
       const posInput = document.getElementById("booking-position");
       const gradeInput = document.getElementById("booking-grade");
 
-      if (type === "Active" || type === "Off-site Employees (On Duty)") {
+      const guestOriginContainer = document.getElementById("guest-origin-container");
+      const guestOriginInput = document.getElementById("booking-guest-origin");
+
+      if (type === "Active" || type === "On Duty") {
         corporateFields.classList.remove("hidden");
         if(posInput) posInput.required = true;
         if(gradeInput) gradeInput.required = true;
-        
-        // Kembalikan visibilitas baris korporat untuk seluruh baris anak tamu tambahan
         document.querySelectorAll(".multi-guest-corp-block").forEach(block => block.classList.remove("hidden"));
         document.querySelectorAll(".multi-guest-position, .multi-guest-grade").forEach(input => input.required = true);
       } else {
         corporateFields.classList.add("hidden");
         if(posInput) { posInput.required = false; posInput.value = ""; }
         if(gradeInput) { gradeInput.required = false; gradeInput.value = ""; }
-        
-        // Sembunyikan visibilitas baris korporat untuk seluruh baris anak tamu tambahan jika tipenya Guest
         document.querySelectorAll(".multi-guest-corp-block").forEach(block => block.classList.add("hidden"));
         document.querySelectorAll(".multi-guest-position, .multi-guest-grade").forEach(input => { input.required = false; input.value = ""; });
+      }
+
+      // PERBAIKAN POIN 2: Tampilkan input asal instansi jika kategori On Duty atau Guest dipilih
+      if (type === "On Duty" || type === "Guest") {
+        guestOriginContainer?.classList.remove("hidden");
+        guestOriginInput?.setAttribute("required", "required");
+      } else {
+        guestOriginContainer?.classList.add("hidden");
+        guestOriginInput?.removeAttribute("required");
+        if(guestOriginInput) guestOriginInput.value = "";
       }
 
       if (type === "Active") { checkoutContainer?.classList.add("hidden"); remarksContainer?.classList.add("hidden"); }
@@ -3852,7 +3971,8 @@
       document.getElementById("chart-lbl-broken").textContent = mockAssets.filter(a => a.status === "Broken").length;
 
       let totalBeds = 0; mockLocations.forEach(l => totalBeds += parseInt(l.capacity));
-      const occupiedBeds = mockOccupants.filter(o => o.status === "Active" && !o.is_on_leave).length;
+      // PERBAIKAN: Hitung murni status "Active" agar sinkron dengan baris kartu huni
+      const occupiedBeds = mockOccupants.filter(o => o.status === "Active").length;
       const emptyBeds = totalBeds - occupiedBeds;
       const pct = totalBeds > 0 ? Math.round((occupiedBeds / totalBeds) * 100) : 0;
       document.getElementById("chart-donut-pct").textContent = pct + "%";
@@ -3913,7 +4033,22 @@
     function triggerDirectMutationPopup(id) { switchPage('workflows'); }
     function handleMutationSubmit(event) { event.preventDefault(); switchPage('assets'); }
     function populateWorkflowDropdowns() { const ast = document.getElementById("mutate-asset-id"); if(ast) ast.innerHTML = `<option value="">Select Assets</option>`; }
-    function openLeaveModal(bkgId) { const occ = mockOccupants.find(o => o.booking_id === bkgId); if(!occ) return; document.getElementById("leave-booking-id").value = bkgId; document.getElementById("leave-emp-name").value = occ.employee_name; toggleLeaveModal(true); }
+    function openLeaveModal(bkgId) { 
+      const occ = mockOccupants.find(o => o.booking_id === bkgId); 
+      if(!occ) return; 
+      document.getElementById("leave-booking-id").value = bkgId; 
+      document.getElementById("leave-emp-name").value = occ.employee_name; 
+      
+      if (occ.leave_start_date) document.getElementById("leave-start").value = occ.leave_start_date.split('T')[0];
+      else document.getElementById("leave-start").value = "";
+      
+      if (occ.leave_end_date) document.getElementById("leave-end").value = occ.leave_end_date.split('T')[0];
+      else document.getElementById("leave-end").value = "";
+      
+      // PERBAIKAN: Memasukkan isi text log remarks lama ke dalam kotak textarea modal Edit Leave
+      document.getElementById("leave-notes").value = occ.remarks || "";
+      toggleLeaveModal(true); 
+    }
     
     // PERBAIKAN: Jika modal leave ditutup, hilangkan backdrop room-detail secara simultan
     function toggleLeaveModal(show) { 
@@ -3931,8 +4066,13 @@
         booking_id: document.getElementById("leave-booking-id").value,
         is_on_leave: true,
         leave_start_date: document.getElementById("leave-start").value,
-        leave_end_date: document.getElementById("leave-end").value
+        leave_end_date: document.getElementById("leave-end").value,
+        // PERBAIKAN: Sertakan note kustom dan nama operator penginput
+        notes: document.getElementById("leave-notes").value || "",
+        operator_name: (currentUser && currentUser.name) ? currentUser.name : "System Admin"
       };
+      // Bersihkan input textarea setelah submit
+      document.getElementById("leave-notes").value = "";
       toggleLeaveModal(false); showToast("Recording leave duration...", "info");
       fetch(API_URL, { method: "POST", body: JSON.stringify(payload) })
         .then(res => res.json())
@@ -3940,12 +4080,138 @@
         .catch(() => showToast("Network connection error", "danger"));
     }
 
+    // PERBAIKAN: Fungsi Pembantu untuk Mengubah format yyyy-mm-dd menjadi dd mmmm yyyy di UI Pop-up
+    function formatDateToDDMMMMYYYY(dateStr) {
+      if (!dateStr) return "-";
+      const parts = dateStr.split("-");
+      if (parts.length === 3) {
+        const year = parts[0];
+        const monthIndex = parseInt(parts[1], 10) - 1;
+        const day = parseInt(parts[2], 10);
+        const months = [
+          "January", "February", "March", "April", "May", "June", 
+          "July", "August", "September", "October", "November", "December"
+        ];
+        if (monthIndex >= 0 && monthIndex < 12) {
+          const displayDay = day < 10 ? '0' + day : day;
+          return `${displayDay} ${months[monthIndex]} ${year}`;
+        }
+      }
+      return dateStr;
+    }
+
     function handleToggleCutiBack(bkgId) {
-      showToast("Updating presence return state...", "info");
-      fetch(API_URL, { method: "POST", body: JSON.stringify({ action: "update_leave", booking_id: bkgId, is_on_leave: false }) })
-      .then(res => res.json())
-      .then(data => { if (data.success) { showToast(data.message, "success"); loadDatabaseState(); } })
-      .catch(() => showToast("API transmission failed", "danger"));
+      const occ = mockOccupants.find(o => o.booking_id === bkgId);
+      if (!occ) return;
+
+      // Kunci background sinkronisasi agar UI tidak berkedip / re-render
+      isCutiBackModalOpen = true;
+
+      // LANGKAH 1: Pop-up persetujuan teks awal (Klik "Yes, Proceed" langsung memicu callback langkah 2 secara instan!)
+      openCustomConfirm("Confirm Kembali Onsite", `Are you sure you want to end the leave status for ${occ.employee_name} and bring them back onsite?`, () => {
+        
+        // LANGKAH 2: Modifikasi isi modal konfirmasi secara dinamis untuk meminta input tanggal aktual (Dibuat kosong bawaan browser)
+      const datePromptHtml = `
+        <div class="space-y-2 text-left">
+          <p class="text-xs text-slate-500 mb-1">Please specify the actual date the occupant returned onsite:</p>
+          <input type="date" id="actual-return-onsite-date" class="w-full text-xs px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+      `;
+
+        // Buka kembali modal konfirmasi kustom, kali ini menyuntikkan form date input ke callback berikutnya
+        setTimeout(() => {
+          openCustomConfirm("Set Actual Return Date", datePromptHtml, () => {
+            const actualDateVal = document.getElementById("actual-return-onsite-date").value;
+            if (!actualDateVal) { 
+              showToast("Date is required!", "warning"); 
+              isCutiBackModalOpen = false;
+              return; 
+            }
+
+           const formattedTextDate = formatDateToDDMMMMYYYY(actualDateVal);
+
+            // LANGKAH 3: Validasi penegasan tanggal akhir (Pesan konfirmasi teks dd mmmm yyyy)
+            setTimeout(() => {
+              openCustomConfirm(
+                "Validasi Tanggal Kembali Onsite",
+                `Apakah Anda yakin bahwa occupant benar-benar kembali secara actual pada tanggal <b>${formattedTextDate}</b>? Sistem akan mencatat tanggal ini ke dalam log history dan mengubah status hunian.`,
+                () => {
+                  // PROSES SUBMIT AKHIR: Kirim data final menuju database Google Sheets via API
+                  showToast("Saving actual return presence...", "info");
+                  const opName = (currentUser && currentUser.name) ? currentUser.name : "System Admin";
+
+                  const payload = {
+                    action: "update_leave",
+                    booking_id: bkgId,
+                    is_on_leave: false,
+                    leave_start_date: occ.leave_start_date || "",
+                    leave_end_date: actualDateVal,
+                    operator_name: opName
+                  };
+
+                  fetch(API_URL, { method: "POST", body: JSON.stringify(payload) })
+                    .then(res => res.json())
+                    .then(data => {
+                      isCutiBackModalOpen = false; // Buka kembali kunci sinkronisasi
+                      if (data.success) {
+                        showToast("Welcome back onsite log synchronized!", "success");
+                        loadDatabaseState();
+                      } else {
+                        showToast("Server Error: " + data.message, "danger");
+                      }
+                    })
+                    .catch(() => {
+                      showToast("API transmission failed", "danger");
+                      isCutiBackModalOpen = false;
+                    });
+                }
+              );
+
+              // Jika cancel di validasi tahap akhir, bebaskan kunci sinkronisasi background
+              document.getElementById("confirm-cancel-btn").addEventListener("click", () => { isCutiBackModalOpen = false; }, { once: true });
+            }, 200);
+
+          });
+
+          // Jika cancel di penentuan tanggal input, bebaskan kunci sinkronisasi background
+          document.getElementById("confirm-cancel-btn").addEventListener("click", () => { isCutiBackModalOpen = false; }, { once: true });
+        }, 150);
+
+      });
+
+      // Jika cancel sejak pertanyaan awal teks pertama kali, bebaskan kunci sinkronisasi background
+      document.getElementById("confirm-cancel-btn").addEventListener("click", () => { isCutiBackModalOpen = false; }, { once: true });
+    }
+
+    // --- FITUR BARU: BATAL LEAVE / CANCEL LEAVE WORKFLOW ---
+    function handleCancelLeave(bkgId) {
+      const occ = mockOccupants.find(o => o.booking_id === bkgId);
+      if (!occ) return;
+
+      openCustomConfirm("Konfirmasi Batal Leave", `Apakah Anda yakin ingin membatalkan pengajuan cuti untuk ${occ.employee_name}? Seluruh jadwal tanggal cuti akan dihapus dan dibersihkan dari sistem.`, () => {
+        showToast("Canceling leave record in cloud database...", "info");
+        const opName = (currentUser && currentUser.name) ? currentUser.name : "System Admin";
+
+        const payload = {
+          action: "update_leave",
+          booking_id: bkgId,
+          is_on_leave: false, 
+          is_cancel_leave: true, // SUNTIKAN: Flag pembeda untuk merekam "Cancel Leave" di History
+          operator_name: opName
+        };
+
+        fetch(API_URL, { method: "POST", body: JSON.stringify(payload) })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              showToast("Leave status successfully canceled!", "success");
+              loadDatabaseState(); // Segarkan UI
+            } else {
+              showToast("Server Error: " + data.message, "danger");
+            }
+          })
+          .catch(() => showToast("Failed to communicate with API server", "danger"));
+      });
     }
 
     function openExtendModal(bkgId) { const occ = mockOccupants.find(o => o.booking_id === bkgId); if(!occ) return; document.getElementById("extend-booking-id").value = bkgId; document.getElementById("extend-emp-name").value = occ.employee_name; toggleExtendModal(true); }
@@ -3964,8 +4230,12 @@
       const payload = {
         action: "extend_booking",
         booking_id: document.getElementById("extend-booking-id").value,
-        check_out_date: document.getElementById("extend-checkout").value
+        check_out_date: document.getElementById("extend-checkout").value,
+        // PERBAIKAN POIN 4: Ambil teks notes alasan extend
+        notes: document.getElementById("extend-notes").value || "",
+        operator_name: (currentUser && currentUser.name) ? currentUser.name : "System Admin"
       };
+      if(document.getElementById("extend-notes")) document.getElementById("extend-notes").value = ""; // Reset
       toggleExtendModal(false); showToast("Extending residency stay...", "info");
       fetch(API_URL, { method: "POST", body: JSON.stringify(payload) })
         .then(res => res.json())
@@ -4824,13 +5094,15 @@ window.onload = function() {
             mockAssets = data.assets || [];
             mockHistory = data.history || [];
             
-            // Segarkan seluruh peta layout dan list denah kamar di layar dalam 1 detik
-            const activePage = document.querySelector('section:not(.hidden)')?.id;
-            if (activePage === 'page-dashboard') loadDashboardData();
-            if (activePage === 'page-mms-master') renderMmsRooms();
-            if (activePage === 'page-mms-maintenance') renderMmsMaintenance();
-            if (activePage === 'page-assets') renderAssetsTable();
-            if (activePage === 'page-history') renderHistoryLogs();
+            // PERBAIKAN MUTLAK: Jangan ijinkan UI me-render ulang kamar jika proses input konfirmasi cuti sedang aktif!
+            if (!isCutiBackModalOpen) {
+              const activePage = document.querySelector('section:not(.hidden)')?.id;
+              if (activePage === 'page-dashboard') loadDashboardData();
+              if (activePage === 'page-mms-master') renderMmsRooms();
+              if (activePage === 'page-mms-maintenance') renderMmsMaintenance();
+              if (activePage === 'page-assets') renderAssetsTable();
+              if (activePage === 'page-history') renderHistoryLogs();
+            }
           }
         }).catch(err => console.log("Silent background synchronization tracking lost..."));
     }
