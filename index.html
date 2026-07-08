@@ -106,7 +106,8 @@
   <div id="toast-container" class="fixed z-[300] flex flex-col gap-2 pointer-events-none toast-bottom-right"></div>
 
   <!-- CUSTOM CONFIRMATION DIALOG -->
-  <div id="confirm-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+  <!-- PERBAIKAN: Menaikkan z-index menjadi z-[210] agar melompati z-[200] milik login & edit modal -->
+  <div id="confirm-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[210] flex items-center justify-center hidden">
     <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 max-w-sm w-full p-6 mx-4 animate-fade-in">
       <h3 id="confirm-title" class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-2">Confirmation</h3>
       <p id="confirm-message" class="text-xs text-slate-500 dark:text-slate-400 mb-6"></p>
@@ -551,6 +552,10 @@
           </div>
 
           <div class="flex justify-end gap-3 mt-6">
+            <!-- PERBAIKAN: Menyisipkan tombol delete kustom dengan trigger fungsi handleDeleteOccupantSubmit -->
+            <button type="button" onclick="handleDeleteOccupantSubmit()" class="mr-auto px-4 py-2 text-xs bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold rounded-xl flex items-center gap-1.5 transition-colors">
+              <i class="fa-solid fa-trash-can text-xs"></i> Delete Occupant
+            </button>
             <button type="button" onclick="document.getElementById('edit-occupant-modal').classList.add('hidden')" class="px-5 py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold rounded-xl transition-colors">Cancel</button>
             <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-md transition-colors">Save Changes</button>
           </div>
@@ -1030,8 +1035,9 @@
         </div>
 
         <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
-          <button type="button" onclick="toggleBookingModal(false)" class="px-4 py-2 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg transition-colors">Cancel</button>
-          <button type="submit" class="px-5 py-2 text-xs bg-indigo-600 text-white font-bold rounded-lg shadow-sm">Add Occupant</button>
+          <!-- PERBAIKAN: Melemparkan fungsi penutupan modular bertahap kustom -->
+          <button type="button" onclick="toggleBookingModal(false); if(!cameFromRoomDetail) { document.getElementById('room-detail-modal').classList.add('hidden'); }" class="px-4 py-2 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg transition-colors">Cancel</button>
+          <button type="submit" class="px-5 py-2 text-xs bg-indigo-600 text-white font-bold rounded-xl shadow-sm">Add Occupant</button>
         </div>
       </form>
     </div> </div> </div>
@@ -1713,7 +1719,7 @@
     // =========================================================================
     // SUNTIKAN ENDPOINT URL API UNTUK SINKRONISASI GO-LIVE GOOGLE SHEETS
     // =========================================================================
-    const API_URL = "https://script.google.com/macros/s/AKfycbxKlYpJ2g8W-qVGRcngOn9TQFwX58Dy8nnIf-f0qC78tsIwvhkUfhVb2iGY8AW85ziQ/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbwVSv2D4pIJruPfOKeQnLDzIdqUKQlnSZ6lOfxORszCkO_iEAy3e6iPIs9DMFp9PF2_/exec";
 
     // =========================================================================
     // PERBAIKAN POIN 3: MENYELARASKAN DATA KUNCI AKUN MENJADI HURUF KECIL (LOWERCASE)
@@ -2369,8 +2375,49 @@
       renderMmsRooms();
     }
 
-    function renderMmsRooms() {
-      let countAll = 0, countReady = 0, countFull = 0, countMaint = 0, countBroken = 0;
+    // Helper: Ekstraksi Nama Blok secara dinamis dari nama kamar
+  function getCustomRoomBlock(name) {
+    const nameUpper = name.toUpperCase();
+    if (nameUpper.includes("VIP")) return "VIP";
+    
+    // Cari pola huruf tunggal seperti B, C, D atau A setelah nama Mess
+    const match = nameUpper.match(/(?:NUSANTARA|KHATULISTIWA)\s+([A-Z])/);
+    if (match) return "Blok " + match[1];
+    
+    return "Lainnya";
+  }
+
+  // Helper: Memberikan bobot urutan (Nusantara VIP -> Nusantara B-E -> Khatulistiwa A-K)
+  function getCustomRoomWeight(loc) {
+    const floor = loc.floor;
+    const block = getCustomRoomBlock(loc.name);
+    let weight = 0;
+    
+    if (floor === "Mess Nusantara") {
+      weight += 100000;
+      if (block === "VIP") weight += 100;
+      else {
+        const letter = block.replace("Blok ", "").trim();
+        weight += 200 + (letter.charCodeAt(0) || 0);
+      }
+    } else if (floor === "Mess Khatulistiwa") {
+      weight += 200000;
+      const letter = block.replace("Blok ", "").trim();
+      weight += 100 + (letter.charCodeAt(0) || 0);
+    } else {
+      weight += 300000;
+    }
+    
+    // Urutkan berdasarkan nomor kamar di bagian akhir (misal 01, 02)
+    const numMatch = loc.name.match(/\d+/);
+    if (numMatch) {
+      weight += parseInt(numMatch[0]) / 10000;
+    }
+    return weight;
+  }
+
+  function renderMmsRooms() {
+    let countAll = 0, countReady = 0, countFull = 0, countMaint = 0, countBroken = 0;
 
       // PROSES 1: HITUNG LIVE COUNTER BADGES BERDASARKAN FILTER GEOMETRIS YANG AKTIF (DINAMIS)
       mockLocations.forEach(loc => {
@@ -2495,6 +2542,9 @@
         return isMatched;
       });
 
+      // PERBAIKAN: Jalankan fungsi sort bobot kustom sebelum data dirender ke layout grid bawah
+      baseFiltered.sort((a, b) => getCustomRoomWeight(a) - getCustomRoomWeight(b));
+
       // PERBAIKAN UTAMA: Tuliskan hasil kalkulasi filter aktif ke element label HTML
       if (document.getElementById("lbl-flt-beds-total")) document.getElementById("lbl-flt-beds-total").textContent = fltTotalBeds;
       if (document.getElementById("lbl-flt-beds-occupied")) document.getElementById("lbl-flt-beds-occupied").textContent = fltOccupiedBeds;
@@ -2559,189 +2609,181 @@
         }
       }
 
-      // 4. KUNCI GENERATE LIST DETAIL KARTU BAWAH AGAR TIDAK SALAH MEMASUKKAN ELEMEN BOX MAP ATAS
-      const currentCardIds = baseFiltered.map(l => "room-card-" + l.location_id);
-      
-      // Bersihkan kartu-kartu lama penjelajah DOM dari background
-      Array.from(grid.children).forEach(card => {
-        if (!currentCardIds.includes(card.id)) {
-          card.remove();
-        }
+      // 4. GENERATE LIST DETAIL KARTU BAWAH DENGAN FILTER PEMISAH BARIS GRID (ROW SEPARATED)
+    grid.innerHTML = ""; // Bersihkan total kontainer utama untuk mencegah tumpang tindih layout
+
+    if (activeSubBlockFilter === "All") {
+      // Kelompokkan data kamar berdasarkan kombinasi Area dan nama Blok
+      const groups = {};
+      baseFiltered.forEach(loc => {
+        const blockName = getCustomRoomBlock(loc.name);
+        const groupKey = `${loc.floor} - ${blockName}`;
+        if (!groups[groupKey]) groups[groupKey] = [];
+        groups[groupKey].push(loc);
       });
 
-      // Render kartu detail bawah secara lossless
-      baseFiltered.forEach(loc => {
-        const capacity = parseInt(loc.capacity || 4);
-        const occupants = mockOccupants.filter(o => o.location_id === loc.location_id && o.status !== "Checked-Out" && o.status !== "");
-        // PERBAIKAN: Kunci hitungan kasur kartu kamar bawah menggunakan status "Active" murni
-        const activeOnsiteCount = occupants.filter(o => o.status === "Active").length;
+      // Render per baris kelompok grup
+      Object.keys(groups).forEach(groupKey => {
+        const roomsInGroup = groups[groupKey];
 
-        let resolvedStatus = loc.status;
-        if (loc.status === "Ready" && activeOnsiteCount >= capacity) resolvedStatus = "Full";
+        // A. Tambahkan Banner Judul Kelompok Blok (Memenuhi lebar 3 kolom grid)
+        const headerDiv = document.createElement("div");
+        headerDiv.className = "col-span-1 md:col-span-2 lg:col-span-3 mt-6 mb-2 flex items-center";
+        headerDiv.innerHTML = `
+          <div class="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-950/60 rounded-xl border border-indigo-100/60 dark:border-indigo-900/40 shadow-xs">
+            <i class="fa-solid fa-layer-group text-indigo-600 text-xs"></i>
+            <span class="text-xs font-black text-indigo-700 dark:text-indigo-400 tracking-wider uppercase">${groupKey}</span>
+            <span class="bg-indigo-200/50 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-300 text-[10px] px-2 py-0.5 font-bold rounded-md">${roomsInGroup.length} Kamar</span>
+          </div>
+          <div class="flex-1 h-[1px] bg-slate-200 dark:bg-slate-800 ml-4"></div>
+        `;
+        grid.appendChild(headerDiv);
 
-        let occupantsHtml = "";
-        
-        // PERBAIKAN MUTLAK: Tarik penanggalan hari ini secara dinamis dari komputer/perangkat lokal user
-        const liveDate = new Date();
-        const curYear = liveDate.getFullYear();
-        const curMonth = String(liveDate.getMonth() + 1).padStart(2, '0');
-        const curDay = String(liveDate.getDate()).padStart(2, '0');
-        const systemTodayStr = `${curYear}-${curMonth}-${curDay}`; 
+        // B. Buat container Sub-Grid murni 3 kolom untuk memaksa baris baru bagi blok berikutnya
+        const subGridContainer = document.createElement("div");
+        subGridContainer.className = "col-span-1 md:col-span-2 lg:col-span-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full";
 
-        occupants.forEach(occ => {
-          // Bersihkan sisa format miring (/) dari Google Sheet menjadi strip (-) jika ada agar perbandingan string akurat
-          const standardizedCheckIn = occ.check_in_date ? occ.check_in_date.replace(/\//g, "-") : "";
-          
-          // Penghuni HANYA dianggap cadangan (Reserve) JIKA tanggal check-in murni lebih besar dari hari ini (masa depan)
-          const isFutureShadow = (standardizedCheckIn > systemTodayStr);
-          
-          let displayCategoryLabel = occ.type; 
-          if (displayCategoryLabel === "Off-site Employees (On Duty)") {
-            displayCategoryLabel = "On Duty";
-          }
-
-          let badgeColorStyle = "bg-indigo-50 text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-400";
-
-          // PERBAIKAN UTAMA: Ambil nilai grade mentah, pastikan di-pad otomatis menjadi 2 digit angka murni di frontend kartu kamar
-          let cleanGrade = occ.grade ? String(occ.grade).trim() : "-";
-          if (cleanGrade !== "-" && !isNaN(cleanGrade) && cleanGrade.length === 1) {
-            cleanGrade = cleanGrade.padStart(2, '0');
-          }
-          // PERBAIKAN: Menyisipkan data gender occupant tepat di sebelah kanan teks jabatan karyawan
-          const extraMetaInfo = (occ.type !== "Guest") ? ` • ${cleanGrade} • ${occ.position || '-'} (${occ.gender || '-'})` : '';
-
-          // Normalisasi nama label category di frontend kartu kamar
-          let cleanDisplayType = occ.type;
-          if (cleanDisplayType === "Off-site Employees (On Duty)") {
-            cleanDisplayType = "On Duty";
-          }
-
-          if (isFutureShadow) {
-            // PERBAIKAN: Tambahkan cetakan isi kolom guest_origin di sebelah kanan label reserve
-            displayCategoryLabel = occ.guest_origin ? "Reserve • " + occ.guest_origin : "Reserve"; 
-            badgeColorStyle = "bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400";
-          } else if (occ.type === "Guest") {
-            // PERBAIKAN POIN 2: Menarik data murni guest_origin murni di belakang kata kategori visual
-            displayCategoryLabel = occ.guest_origin ? "Guest • " + occ.guest_origin : "Guest";
-            badgeColorStyle = "bg-purple-100/70 text-purple-700 dark:bg-purple-950 dark:text-purple-300"; 
-          } else if (occ.type === "On Duty" || occ.type === "Off-site Employees (On Duty)") {
-            // PERBAIKAN POIN 2: Menarik data murni guest_origin murni di belakang kata kategori visual
-            displayCategoryLabel = occ.guest_origin ? "On Duty • " + occ.guest_origin : "On Duty";
-            badgeColorStyle = "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200/40 font-bold"; 
-          }
-
-          let durationInfo = "";
-          const isEmployeeActive = (occ.type === "Active" && !isFutureShadow);
-          if (isEmployeeActive) {
-            // PERBAIKAN POIN 2: Menampilkan tanggal Leave Start & Leave Until secara interaktif di kartu kamar
-            if (occ.is_on_leave === true || occ.is_on_leave === "TRUE") {
-              const leaveStartFormatted = occ.leave_start_date ? formatDateDDMMMYYYY(occ.leave_start_date) : "-";
-              const leaveEndFormatted = occ.leave_end_date ? formatDateDDMMMYYYY(occ.leave_end_date) : "-";
-              
-              durationInfo = `
-                <div class="text-[10px] text-amber-600 dark:text-amber-400 space-y-0.5 mt-1 font-sans font-medium">
-                  <div class="flex items-center gap-1"><i class="fa-solid fa-plane-departure text-[9px] w-3.5 text-slate-400"></i>Leave Start: <span class="font-bold text-slate-700 dark:text-slate-300">${leaveStartFormatted}</span></div>
-                  <div class="flex items-center gap-1"><i class="fa-solid fa-plane-arrival text-[9px] w-3.5 text-slate-400"></i>Leave Until: <span class="font-bold text-slate-700 dark:text-slate-300">${leaveEndFormatted}</span></div>
-                </div>`;
-            }
-          } else {
-            durationInfo = `
-              <div class="text-[10px] text-slate-500 dark:text-slate-400 space-y-0.5 mt-1 font-sans">
-                <div><i class="fa-solid fa-calendar-check mr-1.5 text-slate-400"></i>Check-In: <span class="font-semibold text-slate-600 dark:text-slate-300">${formatDateDDMMMYYYY(occ.check_in_date)}</span></div>
-                <div><i class="fa-solid fa-clock mr-1.5 text-slate-400"></i>Est. Check-Out: <span class="font-semibold text-indigo-600 dark:text-indigo-400">${formatDateDDMMMYYYY(occ.check_out_date)}</span></div>
-              </div>`;
-          }
-
-          let extendBtn = (!isEmployeeActive) ? `<button onclick="openExtendModal('${occ.booking_id}')" class="text-[10px] text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 font-bold hover:underline transition-all">Extend</button>` : "";
-          let leaveBtn = (isEmployeeActive && !occ.is_on_leave) ? `<button onclick="openLeaveModal('${occ.booking_id}')" class="text-[10px] text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 font-bold hover:underline transition-all">Set Leave</button>` : "";
-          if ((occ.is_on_leave === true || occ.is_on_leave === "TRUE") && !isFutureShadow) {
-            // SUNTIKAN: Menyisipkan tombol Batal Leave berwarna merah tegas secara sejajar
-            leaveBtn = `
-              <button onclick="openLeaveModal('${occ.booking_id}')" class="text-[10px] text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 font-bold hover:underline transition-all mr-2">Edit</button>
-              <button onclick="handleCancelLeave('${occ.booking_id}')" class="text-[10px] text-rose-600 hover:text-rose-800 font-bold hover:underline transition-all mr-2">Cancel</button>
-              <button onclick="handleToggleCutiBack('${occ.booking_id}')" class="text-[10px] text-emerald-600 hover:text-emerald-800 dark:text-emerald-400 font-bold hover:underline transition-all">Return</button>
-            `;
-          }
-
-          // PERBAIKAN: Evaluasi cuti aktif hanya jika is_on_leave bernilai true DAN tanggal mulai cuti sudah hari ini atau masa lampau
-          const isCurrentlyLeaveActive = occ.is_on_leave && (occ.leave_start_date ? occ.leave_start_date <= systemTodayStr : true);
-
-          // Gunakan isCurrentlyLeaveActive sebagai penentu opacity-40 (redup)
-          const shadowContainerClass = isFutureShadow ? "opacity-50 bg-slate-100/40 border-dashed dark:bg-slate-900/40 animate-pulse" : (isCurrentlyLeaveActive ? 'opacity-40 bg-slate-100/60 border-dashed' : 'bg-slate-50 dark:bg-slate-950');
-
-          occupantsHtml += `
-            <div class="p-3 border border-slate-200 dark:border-slate-800 rounded-xl flex flex-col gap-1 ${shadowContainerClass} shadow-xs">
-              <div class="flex justify-between items-start">
-                <div class="space-y-0.5 flex-1">
-                  <div class="flex items-center gap-2 flex-wrap">
-                    <span class="font-extrabold text-slate-900 dark:text-white text-xs">${occ.employee_name}</span>
-                    <span class="text-[9px] font-black px-1.5 py-0.5 rounded-md tracking-wide uppercase ${badgeColorStyle}">${displayCategoryLabel}</span>
-                  </div>
-                  <!-- PERBAIKAN: Cetak variabel extraMetaInfo tepat melekat di sebelah kanan ID karyawan -->
-                  <div class="text-[10px] text-slate-400 font-medium">${occ.employee_id}${extraMetaInfo}</div>
-                  ${durationInfo}
-                </div>
-                <div class="flex flex-col items-end gap-3 shrink-0">
-                  <div class="flex items-center gap-1.5 text-[10px] font-bold text-slate-300">
-                    <button onclick="openEditOccupantModal('${occ.booking_id}', 'room-detail')" title="Edit Occupant" class="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 transition-colors">Edit</button>
-                    <span>|</span>
-                    <button onclick="handleCheckout('${occ.booking_id}')" title="Check-Out Occupant" class="text-rose-600 hover:text-rose-700 font-bold transition-colors">Checkout</button>
-                    <span>|</span>
-                    <button onclick="openTransferModal('${occ.booking_id}','${occ.employee_name}','${loc.name}', 'room-detail')" title="Transfer Occupant" class="text-amber-600 hover:text-amber-700 dark:text-amber-500 transition-colors">Move</button>
-                  </div>
-                  <div class="h-5 flex items-center">${extendBtn}${leaveBtn}</div>
-                </div>
-              </div>
-            </div>`;
+        roomsInGroup.forEach(loc => {
+          const cardElement = createSingleCardElement(loc);
+          subGridContainer.appendChild(cardElement);
         });
 
-        if (occupants.length === 0) {
-          occupantsHtml = `<div class="text-xs text-slate-400 text-center py-4 bg-slate-50 dark:bg-slate-950/40 rounded-xl border border-dashed border-slate-200 dark:border-slate-800"><i class="fa-solid fa-bed block text-sm mb-1"></i> Empty Room</div>`;
-        }
-
-        const isAvailableToFill = (loc.status === "Ready") && (activeOnsiteCount < capacity);
-        const cardId = "room-card-" + loc.location_id;
-        let existingCard = document.getElementById(cardId);
-
-        // INNER KONTEN KARTU UTAMA
-        const cardInnerContent = `
-          <div class="space-y-3">
-            <div class="flex justify-between items-start">
-              <div>
-                <h4 class="font-bold text-sm text-slate-900 dark:text-white">${loc.name}</h4>
-                <p class="text-[10px] text-slate-400">${loc.floor} • Capacity: ${capacity} Beds</p>
-              </div>
-              <span class="px-2 py-0.5 text-[9px] rounded-lg font-bold text-white ${resolvedStatus==='Ready'?'bg-emerald-500':resolvedStatus==='Full'?'bg-rose-600 animate-pulse':resolvedStatus==='Maintenance'?'bg-amber-500':'bg-rose-800'}">${resolvedStatus}</span>
-            </div>
-            <div class="space-y-1">
-              <div class="flex justify-between text-[10px] font-bold text-slate-500"><span>BEDS OCCUPIED</span><span>${activeOnsiteCount}/${capacity} Beds</span></div>
-              <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden"><div class="bg-indigo-600 h-full" style="width: ${(activeOnsiteCount/capacity)*100}%"></div></div>
-            </div>
-            <div class="space-y-1.5"><span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Current Occupants</span>${occupantsHtml}</div>
-          </div>
-          <div class="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-            <button onclick="openBookingModal('${loc.location_id}','${loc.name}')" ${!isAvailableToFill ? 'disabled class="w-full px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-400 text-xs font-bold rounded-lg cursor-not-allowed opacity-60"' : 'class="w-full px-3 py-2 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 shadow-md transition-all"'}>Check-In / Reservation</button>
-            <button onclick="openRoomDetail('${loc.location_id}')" class="w-full py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-lg text-xs flex justify-center items-center gap-1">
-              <i class="fa-solid fa-circle-info"></i> View Detail
-            </button>
-          </div>
-        `;
-
-        // BARIS KODE BARU (ANTI-GLITCH TOTAL)
-        if (existingCard) {
-          if (existingCard.innerHTML !== cardInnerContent) {
-            existingCard.innerHTML = cardInnerContent;
-          }
-        } else {
-          const card = document.createElement("div");
-          card.id = cardId;
-          // Kelas 'animate-fade-in' telah dihapus agar interval sinkronisasi berjalan senyap
-          card.className = "bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between space-y-4";
-          card.innerHTML = cardInnerContent;
-          grid.appendChild(card);
-        }
+        grid.appendChild(subGridContainer);
+      });
+    } else {
+      // Jika filter sub-blok tertentu sedang aktif, tampilkan format flat grid standar
+      baseFiltered.forEach(loc => {
+        const cardElement = createSingleCardElement(loc);
+        grid.appendChild(cardElement);
       });
     }
+  }
+
+  // Helper Modular: Menghasilkan Node elemen Room Card tunggal untuk menghindari duplikasi kode
+  function createSingleCardElement(loc) {
+    const capacity = parseInt(loc.capacity || 4);
+    const occupants = mockOccupants.filter(o => o.location_id === loc.location_id && o.status !== "Checked-Out" && o.status !== "");
+    const activeOnsiteCount = occupants.filter(o => o.status === "Active").length;
+
+    let resolvedStatus = loc.status;
+    if (loc.status === "Ready" && activeOnsiteCount >= capacity) resolvedStatus = "Full";
+
+    let occupantsHtml = "";
+    const liveDate = new Date();
+    const systemTodayStr = `${liveDate.getFullYear()}-${String(liveDate.getMonth() + 1).padStart(2, '0')}-${String(liveDate.getDate()).padStart(2, '0')}`;
+
+    occupants.forEach(occ => {
+      const standardizedCheckIn = occ.check_in_date ? occ.check_in_date.replace(/\//g, "-") : "";
+      const isFutureShadow = (standardizedCheckIn > systemTodayStr);
+      
+      let labelTextDetail = isFutureShadow ? "Reserve" : occ.type;
+      let labelColorDetail = isFutureShadow ? 'bg-amber-50 text-amber-600' : occ.type === "Guest" ? 'bg-purple-100/70 text-purple-700' : (occ.type === "On Duty" || occ.type === "Off-site Employees (On Duty)") ? 'bg-emerald-50 text-emerald-600 border border-emerald-200/50 font-bold' : 'bg-indigo-50 text-indigo-600';
+      let badgeColorStyle = "bg-indigo-50 text-indigo-600";
+
+      let cleanGrade = occ.grade ? String(occ.grade).trim() : "-";
+      if (cleanGrade !== "-" && !isNaN(cleanGrade) && cleanGrade.length === 1) {
+        cleanGrade = cleanGrade.padStart(2, '0');
+      }
+      const extraMetaInfo = (occ.type !== "Guest") ? ` • ${cleanGrade} • ${occ.position || '-'} (${occ.gender || '-'})` : '';
+
+      if (isFutureShadow) {
+        labelTextDetail = occ.guest_origin ? "Reserve • " + occ.guest_origin : "Reserve";
+        badgeColorStyle = "bg-amber-50 text-amber-600";
+      } else if (occ.type === "Guest") {
+        labelTextDetail = occ.guest_origin ? "Guest • " + occ.guest_origin : "Guest";
+        badgeColorStyle = "bg-purple-100/70 text-purple-700";
+      } else if (occ.type === "On Duty" || occ.type === "Off-site Employees (On Duty)") {
+        labelTextDetail = occ.guest_origin ? "On Duty • " + occ.guest_origin : "On Duty";
+        badgeColorStyle = "bg-emerald-50 text-emerald-600";
+      }
+
+      let durationInfo = "";
+      if (occ.type === "Active" && !isFutureShadow) {
+        if (occ.is_on_leave === true || occ.is_on_leave === "TRUE") {
+          durationInfo = `
+            <div class="text-[10px] text-amber-600 dark:text-amber-400 space-y-0.5 mt-1 font-sans font-medium">
+              <div class="flex items-center gap-1"><i class="fa-solid fa-plane-departure text-[9px] w-3.5 text-slate-400"></i>Leave Start: <span class="font-bold text-slate-700 dark:text-slate-300">${formatDateDDMMMYYYY(occ.leave_start_date)}</span></div>
+              <div class="flex items-center gap-1"><i class="fa-solid fa-plane-arrival text-[9px] w-3.5 text-slate-400"></i>Leave Until: <span class="font-bold text-slate-700 dark:text-slate-300">${formatDateDDMMMYYYY(occ.leave_end_date)}</span></div>
+            </div>`;
+        }
+      } else {
+        durationInfo = `
+          <div class="text-[10px] text-slate-500 dark:text-slate-400 space-y-0.5 mt-1 font-sans">
+            <div><i class="fa-solid fa-calendar-check mr-1.5 text-slate-400"></i>Check-In: <span class="font-semibold text-slate-600 dark:text-slate-300">${formatDateDDMMMYYYY(occ.check_in_date)}</span></div>
+            <div><i class="fa-solid fa-clock mr-1.5 text-slate-400"></i>Est. Check-Out: <span class="font-semibold text-indigo-600 dark:text-indigo-400">${formatDateDDMMMYYYY(occ.check_out_date)}</span></div>
+          </div>`;
+      }
+
+      let extendBtn = (occ.type !== 'Active' || isFutureShadow) ? `<button onclick="openExtendModal('${occ.booking_id}')" class="text-[10px] text-indigo-600 hover:text-indigo-800 font-bold hover:underline transition-all">Extend</button>` : "";
+      let leaveBtn = (occ.type === 'Active' && !isFutureShadow && !occ.is_on_leave) ? `<button onclick="openLeaveModal('${occ.booking_id}')" class="text-[10px] text-indigo-600 hover:text-indigo-800 font-bold hover:underline transition-all">Set Leave</button>` : "";
+      if ((occ.is_on_leave === true || occ.is_on_leave === "TRUE") && !isFutureShadow) {
+        leaveBtn = `
+          <button onclick="openLeaveModal('${occ.booking_id}')" class="text-[10px] text-indigo-600 hover:text-indigo-800 font-bold hover:underline transition-all mr-2">Edit</button>
+          <button onclick="handleCancelLeave('${occ.booking_id}')" class="text-[10px] text-rose-600 hover:text-rose-800 font-bold hover:underline transition-all mr-2">Cancel</button>
+          <button onclick="handleToggleCutiBack('${occ.booking_id}')" class="text-[10px] text-emerald-600 hover:text-emerald-800 font-bold hover:underline transition-all">Return</button>
+        `;
+      }
+
+      const isCurrentlyLeaveActive = occ.is_on_leave && (occ.leave_start_date ? occ.leave_start_date <= systemTodayStr : true);
+      const shadowContainerClass = isFutureShadow ? "opacity-50 bg-slate-100/40 border-dashed dark:bg-slate-900/40 animate-pulse" : (isCurrentlyLeaveActive ? 'opacity-40 bg-slate-100/60 border-dashed' : 'bg-slate-50 dark:bg-slate-950');
+
+      occupantsHtml += `
+        <div class="p-3 border border-slate-200 dark:border-slate-800 rounded-xl flex flex-col gap-1 ${shadowContainerClass} shadow-xs">
+          <div class="flex justify-between items-start">
+            <div class="space-y-0.5 flex-1">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="font-extrabold text-slate-900 dark:text-white text-xs">${occ.employee_name}</span>
+                <span class="text-[9px] font-black px-1.5 py-0.5 rounded-md tracking-wide uppercase ${labelColorDetail}">${labelTextDetail}</span>
+              </div>
+              <div class="text-[10px] text-slate-400 font-medium">${occ.employee_id}${extraMetaInfo}</div>
+              ${durationInfo}
+            </div>
+            <div class="flex flex-col items-end gap-3 shrink-0">
+              <div class="flex items-center gap-1.5 text-[10px] font-bold text-slate-300">
+                <button onclick="openEditOccupantModal('${occ.booking_id}', 'room-detail')" title="Edit Occupant" class="text-indigo-600 hover:text-indigo-900 font-bold px-1 py-0.5">Edit</button>
+                <span>|</span>
+                <button onclick="handleCheckout('${occ.booking_id}', 'room-detail')" title="Check-Out Occupant" class="text-rose-600 font-bold transition-colors">Checkout</button>
+                <span>|</span>
+                <button onclick="openTransferModal('${occ.booking_id}','${occ.employee_name}','${loc.name}', 'room-detail')" title="Transfer Occupant" class="text-amber-600 font-bold transition-colors">Move</button>
+              </div>
+              <div class="h-5 flex items-center">${extendBtn}${leaveBtn}</div>
+            </div>
+          </div>
+        </div>`;
+    });
+
+    if (occupants.length === 0) {
+      occupantsHtml = `<div class="text-xs text-slate-400 text-center py-4 bg-slate-50 dark:bg-slate-950/40 rounded-xl border border-dashed border-slate-200 dark:border-slate-800"><i class="fa-solid fa-bed block text-sm mb-1"></i> Empty Room</div>`;
+    }
+
+    const isAvailableToFill = (loc.status === "Ready") && (activeOnsiteCount < capacity);
+    const card = document.createElement("div");
+    card.id = "room-card-" + loc.location_id;
+    card.className = "bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between space-y-4";
+    card.innerHTML = `
+      <div class="space-y-3">
+        <div class="flex justify-between items-start">
+          <div>
+            <h4 class="font-bold text-sm text-slate-900 dark:text-white">${loc.name}</h4>
+            <p class="text-[10px] text-slate-400">${loc.floor} • Capacity: ${capacity} Beds</p>
+          </div>
+          <span class="px-2 py-0.5 text-[9px] rounded-lg font-bold text-white ${resolvedStatus==='Ready'?'bg-emerald-500':resolvedStatus==='Full'?'bg-rose-600 animate-pulse':resolvedStatus==='Maintenance'?'bg-amber-500':'bg-rose-800'}">${resolvedStatus}</span>
+        </div>
+        <div class="space-y-1">
+          <div class="flex justify-between text-[10px] font-bold text-slate-500"><span>BEDS OCCUPIED</span><span>${activeOnsiteCount}/${capacity} Beds</span></div>
+          <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden"><div class="bg-indigo-600 h-full" style="width: ${(activeOnsiteCount/capacity)*100}%"></div></div>
+        </div>
+        <div class="space-y-1.5"><span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Current Occupants</span>${occupantsHtml}</div>
+      </div>
+      <div class="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+        <button onclick="openBookingModal('${loc.location_id}','${loc.name}')" ${!isAvailableToFill ? 'disabled class="w-full px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-400 text-xs font-bold rounded-lg cursor-not-allowed opacity-60"' : 'class="w-full px-3 py-2 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 shadow-md transition-all"'}>Check-In / Reservation</button>
+        <button onclick="openRoomDetail('${loc.location_id}')" class="w-full py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-lg text-xs flex justify-center items-center gap-1">
+          <i class="fa-solid fa-circle-info"></i> View Detail
+        </button>
+      </div>
+    `;
+    return card;
+  }
 
     function renderMmsMaintenance() {
       const container = document.getElementById("mms-maintenance-list");
@@ -3239,7 +3281,7 @@
 
       const wrapper = document.getElementById("occupants-title-wrapper");
       let occupantsAddActionHtml = !isRoomFull 
-        ? `<button type="button" onclick="toggleRoomDetailModal(false); openBookingModal('${loc.location_id}','${loc.name}', 'room-detail');" class="text-[10px] bg-indigo-50 hover:bg-indigo-100 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-400 px-2 py-0.5 rounded-md font-bold transition-all">+ Add Occupant</button>`
+        ? `<button type="button" onclick="document.getElementById('room-detail-modal').classList.add('hidden'); openBookingModal('${loc.location_id}','${loc.name}', 'room-detail');" class="text-[10px] bg-indigo-50 hover:bg-indigo-100 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-400 px-2 py-0.5 rounded-md font-bold transition-all">+ Add Occupant</button>`
         : `<span class="text-[9px] text-rose-600 dark:text-rose-400 font-bold bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded-md">Full Capacity</span>`;
 
       if (wrapper) {
@@ -3253,8 +3295,17 @@
           : "";
         
           occupants.forEach(occ => {
-          const systemTodayStr = "2026-07-03";
-          const isFutureShadow = (occ.check_in_date > systemTodayStr);
+          // PERBAIKAN: Mengganti tanggal statis kuno dengan penanggalan dinamis real-time sistem hari ini
+          const liveDate = new Date();
+          const curYear = liveDate.getFullYear();
+          const curMonth = String(liveDate.getMonth() + 1).padStart(2, '0');
+          const curDay = String(liveDate.getDate()).padStart(2, '0');
+          const systemTodayStr = `${curYear}-${curMonth}-${curDay}`; 
+
+          // Bersihkan sisa format miring jika dikirim dari Google Sheet database
+          const standardizedCheckIn = occ.check_in_date ? occ.check_in_date.replace(/\//g, "-") : "";
+          
+          const isFutureShadow = (standardizedCheckIn > systemTodayStr);
           let labelTextDetail = isFutureShadow ? "Reserve" : occ.type;
           
           // PERBAIKAN: Mengubah pemetaan warna On Duty menjadi warna emerald murni yang kontras dan tebal
@@ -3664,6 +3715,49 @@
         .catch(() => showToast("Network lost connection", "danger"));
     }
 
+    // PERBAIKAN: Fungsi eksekusi hapus baris occupant dengan penutupan modal instan (Instant UI Redirect)
+    function handleDeleteOccupantSubmit() {
+      const currentBkgId = document.getElementById("edit-occ-booking-id").value;
+      const currentEmpName = document.getElementById("edit-occ-name").value || "Karyawan Ini";
+      if (!currentBkgId) return showToast("Booking ID data track corrupted.", "warning");
+
+      openCustomConfirm(
+        "Delet Occupant", 
+        `Apakah Anda yakin ingin menghapus data <b>${currentEmpName}</b> secara PERMANEN dari database? Tindakan ini akan melenyapkan data kamar aktifnya dan memindahkannya ke dalam berkas log history.`, 
+        () => {
+          // --- LANGKAH 1: UI REDIRECT INSTAN (Tutup semua modal di depan & latar belakang seketika) ---
+          document.getElementById("edit-occupant-modal").classList.add("hidden");
+          document.getElementById("room-detail-modal").classList.add("hidden");
+          cameFromRoomDetail = false; 
+
+          // Tampilkan pesan loading di halaman utama kartu kamar
+          showToast("Executing hard deletion from database...", "info");
+          
+          const opName = (currentUser && currentUser.name) ? currentUser.name : "System Admin";
+          const payload = {
+            action: "delete_occupant",
+            booking_id: currentBkgId,
+            operator_name: opName
+          };
+
+          // --- LANGKAH 2: EKSEKUSI BACKGROUND TRANSMISSION ---
+          fetch(API_URL, { method: "POST", body: JSON.stringify(payload) })
+            .then(res => res.json())
+            .then(data => {
+              if (data.success) {
+                showToast("Data occupant has been wiped and archived!", "success");
+                loadDatabaseState(); // Sinkronisasi ulang denah kamar utama agar kasur langsung kosong
+              } else {
+                showToast("Server Error: " + data.message, "danger");
+              }
+            })
+            .catch(() => {
+              showToast("Network failure connection.", "danger");
+            });
+        }
+      );
+    }
+
     function openConnectAssetModal() {
       const roomId = document.getElementById("edit-room-id").value;
       const room = mockLocations.find(l => l.location_id === roomId);
@@ -3716,11 +3810,11 @@
 
     function handleTransferSubmit(event) {
       event.preventDefault();
+      const source = document.getElementById("transfer-source").value; // Ambil context asal sebelum ditutup
       const payload = {
         action: "transfer_occupant",
         booking_id: document.getElementById("transfer-booking-id").value,
         target_location_id: document.getElementById("transfer-target-room-id").value,
-        // POIN 1: Kirim nama operator penanggung jawab mutasi kamar menuju API
         operator_name: (currentUser && currentUser.name) ? currentUser.name : "System Admin"
       };
       document.getElementById("transfer-occupant-modal").classList.add("hidden");
@@ -3728,7 +3822,14 @@
       fetch(API_URL, { method: "POST", body: JSON.stringify(payload) })
         .then(res => res.json())
         .then(data => {
-          if (data.success) { showToast(data.message, "success"); loadDatabaseState(); }
+          if (data.success) { 
+            showToast(data.message, "success"); 
+            loadDatabaseState(); 
+            // PERBAIKAN: Jika user berasal dari manage room, paksa pancing buka kembali modal detail kamarnya
+            if (source === 'room-detail' && cameFromRoomDetail && lastOpenedRoomDetailId) {
+              setTimeout(() => { openRoomDetail(lastOpenedRoomDetailId); }, 600);
+            }
+          }
         }).catch(() => showToast("Transmission failure", "danger"));
     }
 
@@ -3755,7 +3856,6 @@
             action: "checkout_occupant", 
             booking_id: bkgId, 
             check_out_date: todayStr,
-            // PERBAIKAN POIN 3: Teruskan data nama operator pelaksana kuncian checkout
             operator_name: (currentUser && currentUser.name) ? currentUser.name : "System Admin"
           })
         })
@@ -3765,8 +3865,8 @@
             showToast(data.message, "success"); 
             loadDatabaseState(); 
             
-            // SINKRONISASI EVALUASI: Buka kembali modal yang tepat pasca eksekusi checkout selesai
-            if (source === 'room-detail' && lastOpenedRoomDetailId) {
+            // PERBAIKAN: Pastikan flag cameFromRoomDetail bernilai true murni sebelum memicu auto-open modal detail
+            if (source === 'room-detail' && cameFromRoomDetail && lastOpenedRoomDetailId) {
               setTimeout(() => { openRoomDetail(lastOpenedRoomDetailId); }, 600);
             }
           } else {
@@ -3842,7 +3942,10 @@
       document.getElementById("booking-modal").classList.toggle("hidden", !show); 
       if (!show) {
         const source = document.getElementById("booking-source").value;
-        if (source === 'room-detail' && lastOpenedRoomDetailId) openRoomDetail(lastOpenedRoomDetailId);
+        // PERBAIKAN: Gunakan status check pelacak cameFromRoomDetail secara akurat
+        if ((source === 'room-detail' || cameFromRoomDetail) && lastOpenedRoomDetailId) {
+          openRoomDetail(lastOpenedRoomDetailId);
+        }
       }
     }
 
