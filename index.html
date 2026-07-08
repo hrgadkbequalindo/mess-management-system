@@ -72,8 +72,9 @@
 <div id="login-screen" class="fixed inset-0 bg-slate-50 dark:bg-slate-950 flex items-center justify-center z-[200] hidden">
     <div class="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl w-full max-w-md space-y-6">
       <div class="text-center space-y-2">
-        <div class="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center text-white text-xl font-bold mx-auto shadow-md shadow-indigo-500/20">
-          <i class="fa-solid fa-layer-group"></i>
+        <!-- PERBAIKAN: Menghapus shadow bayangan kotak putih agar logo bulat kustom tampil transparan murni -->
+        <div class="w-12 h-12 mx-auto bg-transparent overflow-hidden">
+          <img src="https://lh3.googleusercontent.com/d/1M0mrJ9bLfGABlM_SZhDrptCHGHMKtRK1=w200-h200" alt="MMS Logo" class="w-full h-full object-contain">
         </div>
         <h2 class="text-xl font-bold text-slate-900 dark:text-white">Welcome back!</h2>
         <p class="text-xs text-slate-400">Sign in to manage your mess activities</p>
@@ -511,7 +512,7 @@
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Gender *</label>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Gender *</label>
           <select id="edit-occ-gender" required class="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white dark:bg-slate-950 text-slate-800 dark:text-white focus:outline-none">
             <option value="Male">Male</option>
             <option value="Female">Female</option>
@@ -519,7 +520,7 @@
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Category *</label>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Category *</label>
           <!-- PERBAIKAN 1: Mengubah nama opsi value menjadi On Duty murni -->
           <select id="edit-occ-type" onchange="toggleEditOccupantFields()" required class="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white dark:bg-slate-950 text-slate-800 dark:text-white focus:outline-none">
             <option value="Active">Active</option>
@@ -529,23 +530,23 @@
         </div>
         <div class="grid grid-cols-2 gap-4 mb-4">
             <div>
-              <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wider">Check-In Date *</label>
+              <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 tracking-wider">Check-In Date *</label>
               <input type="date" id="edit-occ-checkin" required class="w-full text-xs px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-950 text-slate-800 dark:text-white focus:outline-none">
             </div>
             <div id="edit-occ-checkout-container">
-              <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wider">Estimated Check-Out</label>
+              <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 tracking-wider">Estimated Check-Out</label>
               <input type="date" id="edit-occ-checkout" class="w-full text-xs px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-950 text-slate-800 dark:text-white focus:outline-none">
             </div>
           </div>
 
           <!-- PERBAIKAN POIN 2: Kolom dinamis terpisah mandiri untuk Guest Origin & Remarks -->
           <div id="edit-occ-origin-container" class="hidden mb-3">
-            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Guest Origin *</label>
+            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Guest Origin *</label>
             <input type="text" id="edit-occ-origin" placeholder="Example: SAI Sambutan, RPU Sangasanga, ARCO..." class="w-full text-xs px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-800 bg-white dark:bg-slate-950 dark:text-white focus:outline-none">
           </div>
 
           <div id="edit-occ-custom-remarks-container" class="hidden mb-3">
-            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Remarks *</label>
+            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Remarks *</label>
             <textarea id="edit-occ-custom-remarks" placeholder="Provide extra details for entry purpose..." class="w-full text-xs px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-800 bg-white dark:bg-slate-950 dark:text-white focus:outline-none" rows="2"></textarea>
           </div>
 
@@ -869,7 +870,7 @@
     <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 max-w-sm w-full p-6 mx-4 animate-fade-in">
       <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
         <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-          <i class="fa-solid fa-plane-departure text-indigo-600"></i> Set Leave Duration
+          <i class="fa-solid fa-plane-departure text-indigo-600"></i> Edit Leave
         </h3>
         <button onclick="toggleLeaveModal(false)" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
           <i class="fa-solid fa-xmark text-lg"></i>
@@ -878,28 +879,28 @@
       <form id="leave-form" onsubmit="handleLeaveSubmit(event)" class="space-y-4">
         <input type="hidden" id="leave-booking-id">
         <div>
-          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Employee Name</label>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Employee Name</label>
           <input type="text" id="leave-emp-name" disabled class="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-slate-950 rounded-lg text-slate-500 font-bold">
         </div>
         <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Leave Starts *</label>
+              <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 tracking-wider mb-1.5">Leave Starts *</label>
               <input type="date" id="leave-start" class="w-full text-xs px-3.5 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
             </div>
             <div>
-              <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Return Onsite *</label>
+              <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 tracking-wider mb-1.5">Return Onsite *</label>
               <input type="date" id="leave-end" class="w-full text-xs px-3.5 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
             </div>
           </div>
 
           <div>
-            <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Leave Notes / Remarks</label>
-            <textarea id="leave-notes" rows="2" placeholder="Tulis alasan leave..." class="w-full text-xs px-3.5 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all resize-none"></textarea>
+            <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 tracking-wider mb-1.5">Leave Notes / Remarks</label>
+            <textarea id="leave-notes" rows="2" placeholder="Leave notes..." class="w-full text-xs px-3.5 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all resize-none"></textarea>
           </div>
           
           <div class="flex justify-end gap-3 pt-2">
           <button type="button" onclick="toggleLeaveModal(false)" class="px-4 py-2 text-xs bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-lg">Cancel</button>
-          <button type="submit" class="px-5 py-2 text-xs bg-indigo-600 text-white font-bold rounded-lg shadow-sm">Save Leave Info</button>
+          <button type="submit" class="px-5 py-2 text-xs bg-indigo-600 text-white font-bold rounded-lg shadow-sm">Save Leave</button>
         </div>
       </form>
     </div>
@@ -910,7 +911,7 @@
     <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 max-w-sm w-full p-6 mx-4 animate-fade-in">
       <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
         <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-          <i class="fa-solid fa-clock text-indigo-600"></i> Extend Estimation
+          <i class="fa-solid fa-clock text-indigo-600"></i> Extend On Duty
         </h3>
         <button onclick="toggleExtendModal(false)" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
           <i class="fa-solid fa-xmark text-lg"></i>
@@ -919,21 +920,21 @@
       <form id="extend-form" onsubmit="handleExtendSubmit(event)" class="space-y-4">
         <input type="hidden" id="extend-booking-id">
         <div>
-          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Occupant Name</label>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Occupant Full Name</label>
           <input type="text" id="extend-emp-name" disabled class="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-500 font-bold">
         </div>
         <div>
-          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">New Estimated Checkout *</label>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">New Estimated Check-Out *</label>
           <input type="date" id="extend-checkout" required class="w-full text-xs px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-lg bg-white text-slate-800 focus:outline-none">
         </div>
         <!-- PERBAIKAN POIN 4: Penambahan kolom remarks/note alasan perpanjangan stay -->
         <div>
-          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Extend Notes / Reason</label>
-          <textarea id="extend-notes" placeholder="Tulis alasan perpanjangan stay..." class="w-full text-xs px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none text-slate-800 bg-white" rows="2"></textarea>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Extend Notes / Reason</label>
+          <textarea id="extend-notes" placeholder="Extension reason of stay..." class="w-full text-xs px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none text-slate-800 bg-white" rows="2"></textarea>
         </div>
         <div class="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
           <button type="button" onclick="toggleExtendModal(false)" class="px-4 py-2 text-xs bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-lg">Cancel</button>
-          <button type="submit" class="px-5 py-2 text-xs bg-indigo-600 text-white font-bold rounded-lg shadow-sm">Extend Duration</button>
+          <button type="submit" class="px-5 py-2 text-xs bg-indigo-600 text-white font-bold rounded-lg shadow-sm">Save Extend</button>
         </div>
       </form>
     </div>
@@ -1041,8 +1042,9 @@
     <aside id="sidebar" class="bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 h-screen flex flex-col justify-between shrink-0 transition-all duration-200 z-30 w-64">
       <div>
         <div class="p-4 border-b border-slate-100 dark:border-slate-800 h-16 flex items-center gap-3 overflow-hidden transition-all duration-200" id="sidebar-logo-container">
-          <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold shrink-0 shadow-md mx-auto sm:mx-0">
-            <i class="fa-solid fa-cubes"></i>
+          <!-- PERBAIKAN: Menghapus kelengkungan border kotak dan shadow agar logo bulat kustom tampil transparan murni -->
+          <div class="w-8 h-8 shrink-0 mx-auto sm:mx-0 bg-transparent overflow-hidden">
+            <img src="https://lh3.googleusercontent.com/d/1M0mrJ9bLfGABlM_SZhDrptCHGHMKtRK1=w200-h200" alt="MMS Logo" class="w-full h-full object-contain">
           </div>
           <div id="logo-text" class="flex flex-col transition-all duration-200">
             <span class="font-extrabold text-slate-900 dark:text-white tracking-tight text-base leading-none">MMS</span>
@@ -2605,7 +2607,8 @@
           if (cleanGrade !== "-" && !isNaN(cleanGrade) && cleanGrade.length === 1) {
             cleanGrade = cleanGrade.padStart(2, '0');
           }
-          const extraMetaInfo = (occ.type !== "Guest") ? ` • ${cleanGrade} • ${occ.position || '-'}` : '';
+          // PERBAIKAN: Menyisipkan data gender occupant tepat di sebelah kanan teks jabatan karyawan
+          const extraMetaInfo = (occ.type !== "Guest") ? ` • ${cleanGrade} • ${occ.position || '-'} (${occ.gender || '-'})` : '';
 
           // Normalisasi nama label category di frontend kartu kamar
           let cleanDisplayType = occ.type;
@@ -2654,9 +2657,9 @@
           if ((occ.is_on_leave === true || occ.is_on_leave === "TRUE") && !isFutureShadow) {
             // SUNTIKAN: Menyisipkan tombol Batal Leave berwarna merah tegas secara sejajar
             leaveBtn = `
-              <button onclick="openLeaveModal('${occ.booking_id}')" class="text-[10px] text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 font-bold hover:underline transition-all mr-2">Edit Leave</button>
-              <button onclick="handleCancelLeave('${occ.booking_id}')" class="text-[10px] text-rose-600 hover:text-rose-800 font-bold hover:underline transition-all mr-2">Batal Leave</button>
-              <button onclick="handleToggleCutiBack('${occ.booking_id}')" class="text-[10px] text-emerald-600 hover:text-emerald-800 dark:text-emerald-400 font-bold hover:underline transition-all">Kembali Onsite</button>
+              <button onclick="openLeaveModal('${occ.booking_id}')" class="text-[10px] text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 font-bold hover:underline transition-all mr-2">Edit</button>
+              <button onclick="handleCancelLeave('${occ.booking_id}')" class="text-[10px] text-rose-600 hover:text-rose-800 font-bold hover:underline transition-all mr-2">Cancel</button>
+              <button onclick="handleToggleCutiBack('${occ.booking_id}')" class="text-[10px] text-emerald-600 hover:text-emerald-800 dark:text-emerald-400 font-bold hover:underline transition-all">Return</button>
             `;
           }
 
@@ -2680,11 +2683,11 @@
                 </div>
                 <div class="flex flex-col items-end gap-3 shrink-0">
                   <div class="flex items-center gap-1.5 text-[10px] font-bold text-slate-300">
-                    <button onclick="openEditOccupantModal('${occ.booking_id}', 'room-detail')" title="Edit Occupant (Ubah Data Penghuni)" class="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 transition-colors">Edit</button>
+                    <button onclick="openEditOccupantModal('${occ.booking_id}', 'room-detail')" title="Edit Occupant" class="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 transition-colors">Edit</button>
                     <span>|</span>
-                    <button onclick="handleCheckout('${occ.booking_id}')" title="Checkout (Keluar Kamar)" class="text-rose-600 hover:text-rose-700 font-bold transition-colors">Checkout</button>
+                    <button onclick="handleCheckout('${occ.booking_id}')" title="Check-Out Occupant" class="text-rose-600 hover:text-rose-700 font-bold transition-colors">Checkout</button>
                     <span>|</span>
-                    <button onclick="openTransferModal('${occ.booking_id}','${occ.employee_name}','${loc.name}', 'room-detail')" title="Move Occupant (Pindah Kamar)" class="text-amber-600 hover:text-amber-700 dark:text-amber-500 transition-colors">Move</button>
+                    <button onclick="openTransferModal('${occ.booking_id}','${occ.employee_name}','${loc.name}', 'room-detail')" title="Transfer Occupant" class="text-amber-600 hover:text-amber-700 dark:text-amber-500 transition-colors">Move</button>
                   </div>
                   <div class="h-5 flex items-center">${extendBtn}${leaveBtn}</div>
                 </div>
@@ -3253,16 +3256,34 @@
           const systemTodayStr = "2026-07-03";
           const isFutureShadow = (occ.check_in_date > systemTodayStr);
           let labelTextDetail = isFutureShadow ? "Reserve" : occ.type;
-          let labelColorDetail = isFutureShadow ? 'bg-amber-50 text-amber-600' : occ.type === "Guest" ? 'bg-purple-100/70 text-purple-700' : occ.type === "Off-site Employees (On Duty)" ? 'bg-emerald-50 text-emerald-600' : 'bg-indigo-50 text-indigo-600';
+          
+          // PERBAIKAN: Mengubah pemetaan warna On Duty menjadi warna emerald murni yang kontras dan tebal
+          let labelColorDetail = isFutureShadow ? 'bg-amber-50 text-amber-600' : occ.type === "Guest" ? 'bg-purple-100/70 text-purple-700' : (occ.type === "On Duty" || occ.type === "Off-site Employees (On Duty)") ? 'bg-emerald-50 text-emerald-600 border border-emerald-200/50 font-bold' : 'bg-indigo-50 text-indigo-600';
+
+          // Ambil nilai grade, berikan auto-padding jika berupa angka tunggal
+          let cleanGradeDetail = occ.grade ? String(occ.grade).trim() : "-";
+          if (cleanGradeDetail !== "-" && !isNaN(cleanGradeDetail) && cleanGradeDetail.length === 1) {
+            cleanGradeDetail = cleanGradeDetail.padStart(2, '0');
+          }
 
           const div = document.createElement("div");
           div.className = "p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg flex items-center justify-between text-xs";
+          
+          // PERBAIKAN LAYOUT: Pindahkan ID ke samping nama, dan tambahkan sub-baris metadata (Gender, Grade, Jabatan) di bawahnya
           div.innerHTML = `
-            <div><span class="font-bold text-slate-800 dark:text-slate-200 block">${occ.employee_name}</span><span class="text-[10px] text-slate-400">${occ.employee_id}</span></div>
+            <div class="space-y-0.5">
+              <div class="flex items-center gap-2">
+                <span class="font-extrabold text-slate-800 dark:text-slate-200">${occ.employee_name}</span>
+                <span class="text-[10px] text-slate-400 font-medium font-sans bg-slate-100 dark:bg-slate-900 px-1.5 py-0.5 rounded">${occ.employee_id}</span>
+              </div>
+              <div class="text-[10px] text-slate-500 dark:text-slate-400 font-medium leading-tight">
+                ${occ.gender || '-'} • ${cleanGradeDetail} • ${occ.position || '-'}
+              </div>
+            </div>
             <div class="flex items-center gap-1.5 shrink-0 select-none">
-              <span class="text-[9px] px-1.5 py-0.5 rounded font-bold ${labelColorDetail}">${labelTextDetail}</span>
+              <span class="text-[9px] px-1.5 py-0.5 rounded font-bold tracking-wide ${labelColorDetail}">${labelTextDetail}</span>
               <button type="button" onclick="openEditOccupantModal('${occ.booking_id}', 'room-detail')" title="Edit Occupant" class="text-indigo-600 p-1 transition-transform hover:scale-110"><i class="fa-solid fa-user-pen text-sm"></i></button>
-              <button type="button" onclick="toggleRoomDetailModal(false); handleCheckout('${occ.booking_id}', 'room-detail')" title="Checkout Occupant" class="text-rose-600 p-1 transition-transform hover:scale-110"><i class="fa-solid fa-user-minus text-sm"></i></button>
+              <button type="button" onclick="toggleRoomDetailModal(false); handleCheckout('${occ.booking_id}', 'room-detail')" title="Check-Out Occupant" class="text-rose-600 p-1 transition-transform hover:scale-110"><i class="fa-solid fa-user-minus text-sm"></i></button>
               <button type="button" onclick="toggleRoomDetailModal(false); openTransferModal('${occ.booking_id}','${occ.employee_name}','${loc.name}', 'room-detail')" title="Transfer Occupant" class="text-amber-600 p-1 transition-transform hover:scale-110"><i class="fa-solid fa-truck-ramp-box text-sm"></i></button>
             </div>
           `;
@@ -3304,7 +3325,13 @@
       handleRoomStatusFormToggle('edit'); // Paksa cek status awal kamar saat modal detail dibuka
     }
 
-    function toggleRoomDetailModal(show) { document.getElementById("room-detail-modal").classList.toggle("hidden", !show); }
+    function toggleRoomDetailModal(show) { 
+      document.getElementById("room-detail-modal").classList.toggle("hidden", !show); 
+      // PERBAIKAN: Jika modal detail kamar ditutup murni, bersihkan flag pelacak agar tidak merusak alur kartu luar
+      if (!show) {
+        cameFromRoomDetail = false;
+      }
+    }
     function openAssetDetailFromRoom(assetId) { toggleRoomDetailModal(false); viewAssetDetail(assetId, 'room-detail'); }
 
     // =========================================================================
@@ -3574,11 +3601,10 @@
       document.getElementById("edit-occupant-modal").classList.add("hidden");
       document.getElementById("edit-occ-source").value = "";
       
-      if (source === 'room-detail' && lastOpenedRoomDetailId) {
-        // Kembali ke modal Manage Room & Details jika diakses dari dalam modal tersebut
+      // PERBAIKAN: Gunakan status cameFromRoomDetail sebagai pengunci alur kembali yang akurat
+      if (source === 'room-detail' && cameFromRoomDetail && lastOpenedRoomDetailId) {
         openRoomDetail(lastOpenedRoomDetailId);
       } else {
-        // Jika diakses dari luar (Kartu Kamar), pastikan modal base details ikut dipaksa tertutup murni
         document.getElementById("room-detail-modal").classList.add("hidden");
         cameFromRoomDetail = false;
       }
@@ -3678,7 +3704,13 @@
       document.getElementById("transfer-occupant-modal").classList.toggle("hidden", !show); 
       if (!show) {
         const source = document.getElementById("transfer-source").value;
-        if (source === 'room-detail' && lastOpenedRoomDetailId) openRoomDetail(lastOpenedRoomDetailId);
+        // PERBAIKAN: Pastikan mutasi hanya dikembalikan ke detail kamar jika pengguna memang datang dari sana
+        if (source === 'room-detail' && cameFromRoomDetail && lastOpenedRoomDetailId) {
+          openRoomDetail(lastOpenedRoomDetailId);
+        } else {
+          document.getElementById("room-detail-modal").classList.add("hidden");
+          cameFromRoomDetail = false;
+        }
       }
     }
 
@@ -3709,7 +3741,7 @@
         lastOpenedRoomDetailId = occ.location_id;
       }
 
-      openCustomConfirm("Confirm Checkout", `Are you sure you want to check out ${occ.employee_name}?`, () => {
+      openCustomConfirm("Confirm Check-Out", `Are you sure you want to Check-Out ${occ.employee_name} ?`, () => {
         showToast("Processing cloud database check-out...", "info");
         
         // Sesuaikan zona waktu lokal komputer fisik agar format tanggal ISO sinkron dengan data lokal sheet
@@ -4108,7 +4140,7 @@
       isCutiBackModalOpen = true;
 
       // LANGKAH 1: Pop-up persetujuan teks awal (Klik "Yes, Proceed" langsung memicu callback langkah 2 secara instan!)
-      openCustomConfirm("Confirm Kembali Onsite", `Are you sure you want to end the leave status for ${occ.employee_name} and bring them back onsite?`, () => {
+      openCustomConfirm("Confirm Return to Onsite", `Are you sure you want to end the leave status for ${occ.employee_name} and mark them as returned onsite ?`, () => {
         
         // LANGKAH 2: Modifikasi isi modal konfirmasi secara dinamis untuk meminta input tanggal aktual (Dibuat kosong bawaan browser)
       const datePromptHtml = `
@@ -4188,8 +4220,8 @@
       const occ = mockOccupants.find(o => o.booking_id === bkgId);
       if (!occ) return;
 
-      openCustomConfirm("Konfirmasi Batal Leave", `Apakah Anda yakin ingin membatalkan pengajuan cuti untuk ${occ.employee_name}? Seluruh jadwal tanggal cuti akan dihapus dan dibersihkan dari sistem.`, () => {
-        showToast("Canceling leave record in cloud database...", "info");
+      openCustomConfirm("Leave Cancellation Confirmation", `Are you sure you want to cancel the leave request for ${occ.employee_name} ?`, () => {
+        showToast("Cancelling leave record in cloud database...", "info");
         const opName = (currentUser && currentUser.name) ? currentUser.name : "System Admin";
 
         const payload = {
@@ -4950,12 +4982,11 @@ document.addEventListener("keydown", function(event) {
         toggleExtendModal(false);
       }
       else if (activeModalId === "edit-occupant-modal") {
-        // Ambil penanda context source sebelum modal ditutup
         const currentSource = document.getElementById("edit-occ-source").value;
         closeEditOccupantModal();
         
-        // Poin 3: Jika diakses langsung dari kartu kamar (bukan room-detail), paksa bersihkan background detail modal
-        if (currentSource !== 'room-detail') {
+        // PERBAIKAN: Jika tidak dalam context cameFromRoomDetail, kunci rapat penutupan modal background
+        if (currentSource !== 'room-detail' || !cameFromRoomDetail) {
           document.getElementById("room-detail-modal").classList.add("hidden");
           cameFromRoomDetail = false;
         }
@@ -4963,15 +4994,17 @@ document.addEventListener("keydown", function(event) {
       else if (activeModalId === "booking-modal") {
         const currentSource = document.getElementById("booking-source").value;
         toggleBookingModal(false);
-        if (currentSource !== 'room-detail') {
+        if (currentSource !== 'room-detail' || !cameFromRoomDetail) {
           document.getElementById("room-detail-modal").classList.add("hidden");
+          cameFromRoomDetail = false;
         }
       } 
       else if (activeModalId === "transfer-occupant-modal") {
         const currentSource = document.getElementById("transfer-source").value;
         toggleTransferModal(false);
-        if (currentSource !== 'room-detail') {
+        if (currentSource !== 'room-detail' || !cameFromRoomDetail) {
           document.getElementById("room-detail-modal").classList.add("hidden");
+          cameFromRoomDetail = false;
         }
       }
       else {
