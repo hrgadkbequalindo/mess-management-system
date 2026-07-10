@@ -298,7 +298,7 @@
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Room Status Condition *</label>
-            <select id="edit-maint-status" required onchange="toggleMaintClassificationField()" class="w-full text-xs px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100 focus:outline-none">
+            <select id="edit-maint-status" required onchange="handleMaintStatusModalToggle()" class="w-full text-xs px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100 focus:outline-none">
               <option value="Maintenance">Maintenance</option>
               <option value="Broken">Broken</option>
             </select>
@@ -417,6 +417,13 @@
           <div id="edit-room-remarks-container">
             <label class="block text-[10px] font-bold text-slate-400 dark:text-slate-500 mb-1">Remarks</label>
             <textarea id="edit-room-remarks" rows="2" class="w-full text-xs px-3 py-2 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-900 focus:outline-none" placeholder="Room details..."></textarea>
+          </div>
+
+          <!-- SUNTIKAN POP-UP MAINTENANCE DIRECT DARI DALAM MODAL DETAIL KAMAR -->
+          <div id="maint-quick-link-container" class="hidden pt-1">
+            <button type="button" onclick="const currentLocId = document.getElementById('edit-room-id').value; toggleRoomDetailModal(false); viewMaintenanceDetail(currentLocId);" class="w-full py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 font-extrabold rounded-lg text-[11px] flex items-center justify-center gap-1.5 transition-all border border-amber-500/20">
+              <i class="fa-solid fa-screwdriver-wrench"></i> Open Maintenance Technical Detail →
+            </button>
           </div>
 
           <div class="flex justify-center gap-3 pt-2">
@@ -844,8 +851,15 @@
             <option value="Broken">Broken</option>
           </select>
         </div>
+
+        <div id="new-room-classification-container" class="hidden">
+          <label class="block font-semibold text-slate-600 dark:text-slate-400 mb-1">Klasifikasi Maintenance *</label>
+          <select id="new-room-classification" class="w-full text-xs px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100 focus:outline-none">
+            <option value="Ringan">Ringan</option>
+            <option value="Sedang">Sedang</option>
+          </select>
+        </div>
         
-        <!-- SUNTIKAN MODIFIKASI VISUAL: KOLOM INPUT REMARKS (CATATAN KAMAR BARU) -->
         <div id="add-room-remarks-container">
           <label class="block font-semibold text-slate-600 dark:text-slate-400 mb-1">Remarks</label>
           <textarea id="new-room-remarks" rows="2" placeholder="Room details..." class="w-full text-xs px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100 focus:outline-none resize-none"></textarea>
@@ -1589,11 +1603,11 @@
                 <div class="w-full">
                   <div class="relative w-full">
                     <select id="maint-sort-select" onchange="renderMmsMaintenance()" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 rounded-lg text-[11px] font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none cursor-pointer">
-                      <option value="none">Default (No Sort)</option>
-                      <option value="est_asc">Est. Completion (Terdekat)</option>
-                      <option value="est_desc">Est. Completion (Terlama)</option>
-                      <option value="dur_desc">Duration Logged (Tertinggi)</option>
-                      <option value="dur_asc">Duration Logged (Terendah)</option>
+                      <option value="none">Default</option>
+                      <option value="est_asc">Due Date (Earliest)</option>
+                      <option value="est_desc">Due Date (Latest)</option>
+                      <option value="dur_desc">Duration Logged (Highest)</option>
+                      <option value="dur_asc">Duration Logged (Lowest)</option>
                     </select>
                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
                       <i class="fa-solid fa-chevron-down text-[9px]"></i>
@@ -1794,7 +1808,7 @@
     // =========================================================================
     // SUNTIKAN ENDPOINT URL API UNTUK SINKRONISASI GO-LIVE GOOGLE SHEETS
     // =========================================================================
-    const API_URL = "https://script.google.com/macros/s/AKfycbzvq9PXL8NREIKqh9xPnsoDJ920ZvUIAsDEJCD-qHtLnIxqAV_dIKg7osnN-NbRkSKb/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbxKS4Ln7qPHaxLDB3o9pw7_wAo_y43CLUn5x5NF7qL8dBpwH7xCwSsqWBFfQKPfAE8l/exec";
 
     // =========================================================================
     // PERBAIKAN POIN 3: MENYELARASKAN DATA KUNCI AKUN MENJADI HURUF KECIL (LOWERCASE)
@@ -2828,7 +2842,7 @@
               <div class="flex items-center gap-1.5 text-[10px] font-bold text-slate-300">
                 <button onclick="openEditOccupantModal('${occ.booking_id}', 'room-detail')" title="Edit Occupant" class="text-indigo-600 hover:text-indigo-900 font-bold px-1 py-0.5">Edit</button>
                 <span>|</span>
-                <button onclick="handleCheckout('${occ.booking_id}', 'room-detail')" title="Check-Out Occupant" class="text-rose-600 font-bold transition-colors">Checkout</button>
+                <button onclick="handleCheckout('${occ.booking_id}', 'mess-master')" title="Check-Out Occupant" class="text-rose-600 font-bold transition-colors">Checkout</button>
                 <span>|</span>
                 <button onclick="openTransferModal('${occ.booking_id}','${occ.employee_name}','${loc.name}', 'room-detail')" title="Transfer Occupant" class="text-amber-600 font-bold transition-colors">Move</button>
               </div>
@@ -2844,6 +2858,14 @@
 
     // PERBAIKAN POIN 2: Kamar dengan status "Maintenance" kini diizinkan ikut melakukan penambahan occupant/reservasi
     const isAvailableToFill = (loc.status === "Ready" || loc.status === "Maintenance") && (activeOnsiteCount < capacity);
+    // SUNTIKAN POP-UP DETAIL MAINTENANCE LANGSUNG (TANPA BERPINDAH SUB-HALAMAN)
+    let statusClickActionHtml = "";
+    if (resolvedStatus === "Maintenance" || resolvedStatus === "Broken") {
+      statusClickActionHtml = `onclick="viewMaintenanceDetail('${loc.location_id}'); event.stopPropagation();" title="Click to view breakdown detail directly" class="px-2 py-0.5 text-[9px] rounded-lg font-bold text-white cursor-pointer hover:scale-105 active:scale-95 transition-all select-none ${resolvedStatus==='Maintenance'?'bg-amber-500':'bg-rose-800'}"`;
+    } else {
+      statusClickActionHtml = `class="px-2 py-0.5 text-[9px] rounded-lg font-bold text-white select-none ${resolvedStatus==='Ready'?'bg-emerald-500':'bg-rose-600 animate-pulse'}"`;
+    }
+
     const card = document.createElement("div");
     card.id = "room-card-" + loc.location_id;
     card.className = "bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between space-y-4";
@@ -2854,7 +2876,7 @@
             <h4 class="font-bold text-sm text-slate-900 dark:text-white">${loc.name}</h4>
             <p class="text-[10px] text-slate-400">${loc.floor} • Capacity: ${capacity} Beds</p>
           </div>
-          <span class="px-2 py-0.5 text-[9px] rounded-lg font-bold text-white ${resolvedStatus==='Ready'?'bg-emerald-500':resolvedStatus==='Full'?'bg-rose-600 animate-pulse':resolvedStatus==='Maintenance'?'bg-amber-500':'bg-rose-800'}">${resolvedStatus}</span>
+          <span ${statusClickActionHtml}>${resolvedStatus}</span>
         </div>
         <div class="space-y-1">
           <div class="flex justify-between text-[10px] font-bold text-slate-500"><span>BEDS OCCUPIED</span><span>${activeOnsiteCount}/${capacity} Beds</span></div>
@@ -2878,6 +2900,7 @@
       const classRowWrapper = document.getElementById("maint-class-filter-row");
       if (!container) return;
 
+      // PENGKONDISIAN VISIBILITAS: Pastikan baris filter klasifikasi selalu muncul baik untuk Maintenance, Broken, maupun Fix
       if (classRowWrapper) {
         classRowWrapper.classList.remove("hidden");
       }
@@ -2917,7 +2940,12 @@
             const letter = activeMaintSubBlockFilter.replace("Blok ", "").trim().toUpperCase();
             matchesSubBlock = h.room_name.toUpperCase().includes(" " + letter + " ");
           }
-          const matchesClass = (activeMaintClassFilter === "All" || h.classification === activeMaintClassFilter);
+          
+          // PERBAIKAN LOGIKA SINKRONISASI KLASIFIKASI: Pastikan pembersihan whitespace dan standardisasi huruf kecil sempurna
+          const targetClassClean = String(h.classification || "").trim().toLowerCase();
+          const activeFilterClean = String(activeMaintClassFilter || "All").trim().toLowerCase();
+          
+          const matchesClass = (activeFilterClean === "all" || targetClassClean === activeFilterClean);
 
           return matchesFloor && matchesSearch && matchesSubBlock && matchesClass;
         });
@@ -2938,14 +2966,8 @@
         subGridContainer.className = "w-full grid grid-cols-1 gap-4";
 
         archivedFixLogs.forEach(h => {
-          // Menyediakan penanda tanggal hari ini
-          const todayStr = new Date().toISOString().split('T')[0];
-
-          // PERBAIKAN UTAMA: Menggunakan h.actual_completion dan menambahkan pembulatan inklusif (+ 1) agar durasi pengerjaan tepat
           const start = h.reported_date ? new Date(h.reported_date) : new Date();
           const end = h.actual_completion ? new Date(h.actual_completion) : new Date();
-          
-          // Menggunakan Math.floor untuk selisih murni hari lalu ditambah 1 agar hari pertama ikut terhitung
           const diffTime = Math.abs(end.getTime() - start.getTime());
           const durationDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
 
@@ -2954,9 +2976,21 @@
             ? `<img src="${imgUrl}" class="w-20 h-20 rounded-xl object-cover border border-slate-200 dark:border-slate-800 shadow-xs cursor-pointer shrink-0" onclick="zoomImage('${imgUrl}', 'Resolved Visual ${h.room_name}')">`
             : `<div class="w-20 h-20 rounded-xl bg-slate-50 dark:bg-slate-800 border border-dashed border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center text-slate-400 text-[9px] text-center shrink-0 p-1"><span>No Photo</span></div>`;
 
-          let classBadge = h.classification ? `<span class="px-1.5 py-0.5 text-[8px] rounded border bg-emerald-50 text-emerald-700 border-emerald-200 font-extrabold">${h.classification}</span>` : "";
-
-          // PERBAIKAN: Logika Overdue dihapus dari filter FIX karena kamar sudah sukses diperbaiki (RESOLVED)
+          // PERBAIKAN VISUALISASI BADGE: Pencocokan warna kustom yang toleran terhadap perbedaan kapitalisasi huruf database
+          let classBadge = "";
+          if (h.classification && String(h.classification).trim() !== "") {
+            const classCheckNormalized = String(h.classification).trim().toLowerCase();
+            
+            // PERBAIKAN MUTLAK: Jika klasifikasi di database bernilai "berat", sembunyikan total badge-nya dari visual UI Fix Logs
+            if (classCheckNormalized !== "berat") {
+              let classColorStyle = (classCheckNormalized === "sedang") 
+                ? "bg-orange-50 text-orange-700 border-orange-200 font-extrabold dark:bg-orange-950/40 dark:text-orange-400 dark:border-orange-900/50" 
+                : "bg-indigo-50 text-indigo-600 font-bold border-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-900/50";
+              
+              const formattedClassText = classCheckNormalized.charAt(0).toUpperCase() + classCheckNormalized.slice(1);
+              classBadge = `<span class="px-1.5 py-0.5 text-[8px] rounded border ${classColorStyle}">${formattedClassText}</span>`;
+            }
+          }
 
           const card = document.createElement("div");
           card.className = "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-xs flex flex-col lg:flex-row gap-4 items-center justify-between border-l-4 border-l-emerald-500";
@@ -3119,7 +3153,8 @@
           }
 
           let classificationBadge = "";
-          if (room.classification) {
+          // PERBAIKAN: Jika status kamar adalah Broken, classificationBadge dijamin KOSONG (Hide total dari UI)
+          if (room.classification && room.status !== "Broken") {
             let classColorStyle = room.classification === "Sedang" 
               ? "bg-orange-50 text-orange-700 border-orange-200 font-extrabold" 
               : "bg-indigo-50 text-indigo-600 font-bold border-indigo-100";
@@ -3166,10 +3201,10 @@
             </div>
             
             <div class="flex flex-row sm:flex-row lg:flex-col gap-1.5 shrink-0 w-full lg:w-auto mt-2 lg:mt-0">
-              <button onclick="viewMaintenanceDetail('${room.location_id}')" class="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-lg text-[10px] flex items-center justify-center gap-1.5 flex-1 lg:w-32"><i class="fa-solid fa-eye text-indigo-500"></i> Detail Info</button>
-              <button onclick="openEditMaintenanceModal('${room.location_id}')" class="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-lg text-[10px] flex items-center justify-center gap-1.5 flex-1 lg:w-32"><i class="fa-solid fa-pencil text-amber-500"></i> Edit Report</button>
+              <button onclick="viewMaintenanceDetail('${room.location_id}')" class="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-lg text-[10px] flex items-center justify-center gap-1.5 flex-1 lg:w-32"><i class="fa-solid fa-eye text-indigo-500"></i> View Detail</button>
+              <button onclick="openEditMaintenanceModal('${room.location_id}')" class="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-lg text-[10px] flex items-center justify-center gap-1.5 flex-1 lg:w-32"><i class="fa-solid fa-pencil text-amber-500"></i> Edit Maint</button>
               <button onclick="triggerExtendMaintenancePopup('${room.location_id}')" class="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-lg text-[10px] flex items-center justify-center gap-1.5 flex-1 lg:w-32"><i class="fa-solid fa-clock text-orange-500"></i> Extend Maint</button>
-              <button onclick="resolveRoomRepair('${room.location_id}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-[10px] shadow-sm flex items-center justify-center gap-1 flex-1 lg:w-32"><i class="fa-solid fa-circle-check"></i> Fix Ready</button>
+              <button onclick="resolveRoomRepair('${room.location_id}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-[10px] shadow-sm flex items-center justify-center gap-1 flex-1 lg:w-32"><i class="fa-solid fa-circle-check"></i> Resolved</button>
             </div>
           `;
           container.appendChild(card);
@@ -3282,6 +3317,20 @@
       document.getElementById("confirm-title").textContent = "Detail Maintenance";
       document.getElementById("confirm-message").innerHTML = modalContent; 
       document.getElementById("confirm-modal").classList.remove("hidden");
+
+      // LOGIKA EVALUASI TOMBOL CANCEL KHUSUS: Mengembalikan overlay modal detail kamar asli jika diakses lewat tombol pintas
+      const cancelBtn = document.getElementById("confirm-cancel-btn");
+      if (cancelBtn) {
+        cancelBtn.onclick = function() {
+          document.getElementById("confirm-modal").classList.add("hidden");
+          const editRoomId = document.getElementById("edit-room-id").value;
+          // Jika edit-room-modal terdeteksi memiliki ID aktif (berarti diakses dari dalam), buka kembali modal utamanya
+          if (editRoomId && lastOpenedRoomDetailId === editRoomId) {
+            toggleRoomDetailModal(true);
+          }
+          cancelBtn.onclick = null; // Sterilkan fungsi handler setelah digunakan
+        };
+      }
       
       const okBtn = document.getElementById("confirm-ok-btn");
       if (okBtn) okBtn.classList.add("hidden");
@@ -3363,6 +3412,11 @@
       let imgBeforeHtml = log.photo_url_before ? `<img src="${log.photo_url_before}" class="h-16 w-24 rounded-lg object-cover border cursor-pointer mx-auto shadow-xs" onclick="zoomImage('${log.photo_url_before}', 'Sebelum')">` : '<span class="text-slate-400 italic text-[10px]">No Photo</span>';
       let imgAfterHtml = log.photo_url_after ? `<img src="${log.photo_url_after}" class="h-16 w-24 rounded-lg object-cover border border-emerald-300 cursor-pointer mx-auto shadow-xs" onclick="zoomImage('${log.photo_url_after}', 'Setelah')">` : '<span class="text-slate-400 italic text-[10px]">No Photo</span>';
 
+      // 🔽 TARO KODE PERBAIKAN DINAMIS TEPAT DI SINI 🔽
+      const normalizedClass = String(log.classification || "").trim().toLowerCase();
+      const displayClassText = log.classification ? (normalizedClass.charAt(0).toUpperCase() + normalizedClass.slice(1)) : "Ringan";
+      const classTextColorClass = (normalizedClass === "sedang") ? "text-orange-600 dark:text-orange-400" : "text-indigo-600 dark:text-indigo-400";
+
       const modalContent = `
         <div class="relative space-y-3.5 text-left text-xs text-slate-700 dark:text-slate-300">
           <button onclick="document.getElementById('confirm-modal').classList.add('hidden'); const okBtn = document.getElementById('confirm-ok-btn'); if (okBtn) okBtn.classList.remove('hidden');" class="absolute -top-10 -right-2 text-slate-400 hover:text-slate-600 text-lg p-1" title="Close"><i class="fa-solid fa-xmark"></i></button>
@@ -3371,7 +3425,7 @@
             <div><span class="text-slate-400 block text-[9px] uppercase font-bold">Area Mess</span><p class="font-semibold">${log.floor || '-'}</p></div>
           </div>
           <div class="grid grid-cols-2 gap-4 border-b pb-2">
-            <div><span class="text-slate-400 block text-[9px] uppercase font-bold">Klasifikasi</span><p class="font-bold text-indigo-600 dark:text-indigo-400">${log.classification || 'Ringan'}</p></div>
+            <div><span class="text-slate-400 block text-[9px] uppercase font-bold">Klasifikasi</span><p class="font-bold ${classTextColorClass}">${displayClassText}</p></div>
             <div><span class="text-slate-400 block text-[9px] uppercase font-bold">Closed By Operator</span><p class="font-bold text-slate-800 dark:text-slate-200">${log.recorded_by || 'Admin'}</p></div>
           </div>
           <div class="grid grid-cols-2 gap-4 border-b pb-2">
@@ -3436,7 +3490,8 @@
         }
       }
       
-      toggleMaintClassificationField();
+      // 🌟 PERBAIKAN: Gunakan fungsi pelacak ter-update (Broken = Hide Klasifikasi)
+      handleMaintStatusModalToggle();
       
       document.getElementById("maint-camera-input").value = "";
       document.getElementById("maint-gallery-input").value = "";
@@ -3453,15 +3508,6 @@
       renderMaintenancePhotosPreview();
       
       document.getElementById("edit-maintenance-modal").classList.remove("hidden");
-    }
-
-    function toggleMaintClassificationField() {
-      const status = document.getElementById("edit-maint-status").value;
-      const container = document.getElementById("maint-classification-container");
-      if(container) {
-        if(status === "Maintenance") container.classList.remove("hidden");
-        else { container.classList.add("hidden"); document.getElementById("edit-maint-classification").value = ""; }
-      }
     }
 
     function openUploadChoiceModal() { 
@@ -3769,12 +3815,35 @@
     function toggleManageClassificationVisibility() {
       const statusField = document.getElementById("edit-room-status");
       const container = document.getElementById("manage-classification-container");
+      const quickLinkContainer = document.getElementById("maint-quick-link-container");
+      // Tangkap box remarks milik modal edit kamar lama
+      const remarksBox = document.getElementById("edit-room-remarks-container");
+      
       if (container && statusField) {
         if (statusField.value === "Maintenance") {
           container.classList.remove("hidden");
         } else {
-          container.classList.add("hidden"); // Otomatis dipaksa sembunyi jika status Ready, Occupied, atau Broken
+          container.classList.add("hidden");
         }
+      }
+
+      // 🌟 SUNTIKAN SINKRONISASI REMARKS: Sembunyikan jika Maintenance/Broken, dan PAKSA TAMPIL jika Ready
+      if (statusField && remarksBox) {
+        if (statusField.value === "Maintenance" || statusField.value === "Broken") {
+          remarksBox.classList.add("hidden");
+        } else {
+          remarksBox.classList.remove("hidden"); // Menjamin kolom Remarks muncul kembali saat status kamar kembali 'Ready'
+        }
+      }
+
+      // Kunci mati kontainer agar tombol pintas technical detail selalu ter-hide murni
+      if (quickLinkContainer) {
+        quickLinkContainer.classList.add("hidden");
+      }
+      
+      // Jalankan juga sinkronisasi teks dan style kelas tombol submit murni
+      if (statusField) {
+        handleRoomStatusFormToggle('edit');
       }
     }
 
@@ -4268,15 +4337,24 @@
       const occ = mockOccupants.find(o => o.booking_id === bkgId);
       if (!occ) return;
       
-      // Simpan parameter source ke penampung context global modal jika diakses dari room-detail
-      if (source === 'room-detail' && occ) {
+      // Mengunci flag secara ketat berdasarkan asal muasal tombol yang diklik
+      if (source === 'room-detail') {
         lastOpenedRoomDetailId = occ.location_id;
+        cameFromRoomDetail = true; 
+        document.getElementById("room-detail-modal").classList.add("hidden");
+      } else {
+        lastOpenedRoomDetailId = null;
+        cameFromRoomDetail = false; 
+      }
+
+      const okBtn = document.getElementById("confirm-ok-btn");
+      if (okBtn) {
+        okBtn.classList.remove("hidden");
       }
 
       openCustomConfirm("Confirm Check-Out", `Are you sure you want to Check-Out ${occ.employee_name} ?`, () => {
         showToast("Processing cloud database check-out...", "info");
         
-        // Sesuaikan zona waktu lokal komputer fisik agar format tanggal ISO sinkron dengan data lokal sheet
         const localDate = new Date();
         const tzOffset = localDate.getTimezoneOffset() * 60000;
         const todayStr = (new Date(localDate.getTime() - tzOffset)).toISOString().split('T')[0];
@@ -4294,17 +4372,49 @@
         .then(data => {
           if (data.success) { 
             showToast(data.message, "success"); 
-            loadDatabaseState(); 
+            document.getElementById("room-detail-modal").classList.add("hidden");
+            cameFromRoomDetail = false;
             
-            // PERBAIKAN: Pastikan flag cameFromRoomDetail bernilai true murni sebelum memicu auto-open modal detail
-            if (source === 'room-detail' && cameFromRoomDetail && lastOpenedRoomDetailId) {
-              setTimeout(() => { openRoomDetail(lastOpenedRoomDetailId); }, 600);
+            // Kembalikan tombol cancel ke fungsi penutupan murni yang bersih
+            const cancelBtn = document.getElementById("confirm-cancel-btn");
+            if (cancelBtn) {
+              cancelBtn.onclick = function() { document.getElementById("confirm-modal").classList.add("hidden"); };
             }
+            loadDatabaseState(); 
           } else {
             showToast("Server Error: " + data.message, "danger");
+            if (cameFromRoomDetail && lastOpenedRoomDetailId) {
+              openRoomDetail(lastOpenedRoomDetailId);
+            }
           }
-        }).catch(() => showToast("Network lost connection", "danger"));
+        }).catch(() => {
+          showToast("Network lost connection", "danger");
+          if (cameFromRoomDetail && lastOpenedRoomDetailId) {
+            openRoomDetail(lastOpenedRoomDetailId);
+          }
+        });
       });
+
+      // PENANGANAN TOMBOL BATAL / CLOSE (X) YANG STERIL DARI RE-RENDER INTERVAL:
+      const cancelBtn = document.getElementById("confirm-cancel-btn");
+      if (cancelBtn) {
+        cancelBtn.onclick = function() {
+          document.getElementById("confirm-modal").classList.add("hidden");
+          
+          if (cameFromRoomDetail && lastOpenedRoomDetailId) {
+            openRoomDetail(lastOpenedRoomDetailId); // Kembali ke modal detail
+          } else {
+            // Force tutup total, bersihkan status, tetap di halaman kartu kamar utama
+            document.getElementById("room-detail-modal").classList.add("hidden");
+            cameFromRoomDetail = false;
+          }
+          
+          // Sterilisasi callback pasca klik
+          cancelBtn.onclick = function() {
+            document.getElementById("confirm-modal").classList.add("hidden");
+          };
+        };
+      }
     }
 
     function addNewGuestRowToForm() {
@@ -4619,17 +4729,16 @@
       toggleLeaveModal(true); 
     }
     
-    // PERBAIKAN: Jika modal leave ditutup, lakukan evaluasi alur navigasi balik secara cerdas
+    // PERBAIKAN: Jika modal leave ditutup, hilangkan backdrop room-detail secara simultan menuju halaman kartu kamar utama
     function toggleLeaveModal(show) { 
       document.getElementById("leave-modal").classList.toggle("hidden", !show); 
       
       if (!show) {
-        // Jika sebelumnya datang dari modal detail kamar (Manage Room), panggil balik modal tersebut!
-        if (typeof cameFromRoomDetail !== 'undefined' && cameFromRoomDetail) {
-          toggleRoomDetailModal(true);
-        } else {
-          // Jika datang dari halaman utama biasa, baru sembunyikan background modal detailnya
-          document.getElementById("room-detail-modal").classList.add("hidden");
+        // 🌟 PERBAIKAN MUTLAK: Kunci mati flag pelacak dan paksa tutup modal manage room di belakang layar
+        cameFromRoomDetail = false;
+        const roomDetailModal = document.getElementById("room-detail-modal");
+        if (roomDetailModal) {
+          roomDetailModal.classList.add("hidden");
         }
       }
     }
@@ -4818,7 +4927,17 @@
         .catch(() => showToast("API connection error", "danger"));
     }
 
-    function toggleAddRoomModal(show) { document.getElementById("add-room-modal").classList.toggle("hidden", !show); }
+    function toggleAddRoomModal(show) { 
+      const modal = document.getElementById("add-room-modal");
+      if (modal) {
+        modal.classList.toggle("hidden", !show);
+        
+        // PERBAIKAN DINAMIS: Saat modal dipanggil balik (show === true), evaluasi ulang status yang terpilih
+        if (show) {
+          handleRoomStatusFormToggle('add');
+        }
+      }
+    }
 
    function handleRoomSubmit(event) {
       event.preventDefault();
@@ -4833,9 +4952,14 @@
 
       // JIKA USER MEMILIH STATUS MAINTENANCE / BROKEN, INTERSEPT ALURNYA DI SINI
       if ((roomStatus === "Maintenance" || roomStatus === "Broken") && submitBtn && submitBtn.textContent === "Continue") {
+        
+        // Tangkap klasifikasi dari formulir Add Room
+        const newRoomClassElem = document.getElementById("new-room-classification");
+        const selectedClassification = newRoomClassElem ? newRoomClassElem.value : "Ringan";
+
         toggleAddRoomModal(false);
         
-        // 1. Simpan data input kamar ke memory global (Belum dikirim ke Sheets)
+        // 1. Simpan data input kamar ke memory global (Termasuk klasifikasi pilihan user)
         pendingNewRoomData = {
           action: "create_location",
           name: roomName,
@@ -4843,19 +4967,32 @@
           description: "New Room Setup",  
           capacity: roomCap,              
           status: roomStatus,             
-          remarks: roomRemarks
+          remarks: roomRemarks,
+          classification: selectedClassification // Simpan klasifikasi di memori tunda
         };
 
         // 2. Langsung pancing buka modal Maintenance Record di depan layar
         document.getElementById("edit-maint-room-id").value = "PENDING_NEW_ROOM";
         document.getElementById("edit-maint-room-name").value = roomName;
-        document.getElementById("edit-maint-reported-date").value = new Date().toISOString().split('T')[0];
+        document.getElementById("edit-maint-reported-date").value = "";
         document.getElementById("edit-maint-completion-date").value = "";
-        document.getElementById("edit-maint-remarks").value = "";
+        document.getElementById("edit-maint-remarks").value = roomRemarks || "";
         temporaryUploadedPhotos = [];
         renderMaintenancePhotosPreview();
+
+        // SUNTIKAN OTOMATIS: Samakan dropdown status dan klasifikasi di modal Edit Maintenance
+        const maintStatusSelect = document.getElementById("edit-maint-status");
+        if (maintStatusSelect) maintStatusSelect.value = roomStatus;
+
+        const maintClassSelect = document.getElementById("edit-maint-classification");
+        if (maintClassSelect) {
+          maintClassSelect.value = (roomStatus === "Maintenance") ? selectedClassification : "Ringan";
+        }
         
         document.getElementById("edit-maintenance-modal").classList.remove("hidden");
+
+        // 🌟 JALANKAN DI SINI: Deteksi langsung visibilitas dropdown (Broken = Hide Klasifikasi)
+        handleMaintStatusModalToggle();
         
         // Pasang flag context pada form maintenance
         const maintForm = document.getElementById("edit-maintenance-form");
@@ -4940,29 +5077,42 @@
         const roomPayload = pendingNewRoomData;
         roomPayload.remarks = maintPayload.remarks; 
 
+        // 🌟 PERBAIKAN: Tutup seketika semua modal agar UI responsif langsung kembali ke kartu kamar
+        document.getElementById("edit-maintenance-modal").classList.add("hidden");
+        document.getElementById("add-room-modal").classList.add("hidden");
+        document.getElementById("room-detail-modal").classList.add("hidden");
+        cameFromRoomDetail = false;
+
+        // Langkah A: Kirim payload pembuatan kamar ke database Google Sheets
         fetch(API_URL, { method: "POST", body: JSON.stringify(roomPayload) })
           .then(res => res.json())
           .then(roomData => {
             if (roomData.success) {
+              // Langkah B: Ambil dataset lokasi terbaru dari database sheets
               fetch(API_URL)
                 .then(r => r.json())
                 .then(d => {
-                  const lastLoc = d.locations[d.locations.length - 1];
-                  if (lastLoc) {
-                    // SUNTIKAN INTEGRASI: Konversi ID kamar baru menjadi String solid sebelum dilempar ke backend
-                    maintPayload.location_id = String(lastLoc.location_id);
+                  const targetRoomObj = d.locations.find(l => String(l.name).trim() === String(roomPayload.name).trim());
+                  
+                  if (targetRoomObj) {
+                    maintPayload.location_id = String(targetRoomObj.location_id);
                     
-                    // Langkah 3: Daftarkan log kerusakan ke database sheets secara simultan
                     fetch(API_URL, { method: "POST", body: JSON.stringify(maintPayload) })
                       .then(() => {
                         showToast("Room created & Maintenance record successfully generated!", "success");
+                        
                         document.getElementById("add-room-form").reset();
                         handleRoomStatusFormToggle('add');
+                        
                         pendingNewRoomData = null; 
                         loadDatabaseState();
                       });
+                  } else {
+                    showToast("Database Tracking Error: Gagal memetakan ID Kamar Baru.", "danger");
                   }
                 });
+            } else {
+              showToast("Server Error: " + roomData.message, "danger");
             }
           });
           
@@ -4983,12 +5133,17 @@
           remarks: maintPayload.remarks
         };
 
+        // 🌟 PERBAIKAN: Pastikan seluruh modal ditutup total tanpa tersisa
+        document.getElementById("edit-maintenance-modal").classList.add("hidden");
+        document.getElementById("room-detail-modal").classList.add("hidden");
+        document.getElementById("add-room-modal").classList.add("hidden");
+        cameFromRoomDetail = false; 
+
         fetch(API_URL, { method: "POST", body: JSON.stringify(roomPayload) })
           .then(() => {
             fetch(API_URL, { method: "POST", body: JSON.stringify(maintPayload) })
               .then(() => {
                 showToast("Room status updated & Maintenance log synced successfully!", "success");
-                // PERBAIKAN: Bersihkan array foto sementara saat sukses
                 temporaryUploadedPhotos = [];
                 loadDatabaseState();
               });
@@ -4996,6 +5151,7 @@
 
         maintForm.removeAttribute("data-deferred-status");
         maintForm.removeAttribute("data-deferred-mode");
+        maintForm.removeAttribute("data-deferred-classification");
         return;
       }
 
@@ -5022,7 +5178,7 @@
       // Ambil tanggal hari ini sewaktu admin mengklik tombol sebagai isian bawaan yang valid
       const today = new Date().toISOString().split('T')[0];
 
-      // Susun elemen suntikan HTML Form di dalam modal konfirmasi teratas (TERBARU + KOLOM REMARKS)
+      // Susun elemen suntikan HTML Form di dalam modal konfirmasi teratas
       const formHtml = `
         <div class="space-y-4 text-left text-xs text-slate-700 dark:text-slate-300">
           <p class="text-[11px] text-slate-500">Silakan masukkan data penutupan berkas pemeliharaan fisik untuk kamar <b>${roomNameStr}</b>:</p>
@@ -5049,14 +5205,20 @@
         </div>
       `;
 
-      // Buka modal kustom konfirmasi
+      // Pastikan tombol OK terlihat murni
+      const okBtn = document.getElementById("confirm-ok-btn");
+      if (okBtn) {
+        okBtn.classList.remove("hidden");
+      }
+
+      // Bersihkan memory base64 lama setiap kali form resolve baru dibuka agar steril
+      temporaryPhotoAfterBase64 = "";
+
+      // Buka custom confirm modal
       openCustomConfirm("⚙️ SELESAIKAN PEMELIHARAAN KAMAR", formHtml, () => {
+        // SUNTIKAN PERBAIKAN: Fungsi ini sekarang murni hanya mengeksekusi pengiriman data jika lolos validasi luar!
         const actualDate = document.getElementById("maint-actual-date").value;
-        const actualRemarks = document.getElementById("maint-actual-remarks").value.trim();
-        
-        if (!actualDate) return showToast("Tanggal selesai aktual wajib diisi!", "warning");
-        if (!actualRemarks) return showToast("Remarks / Catatan penyelesaian wajib diisi!", "warning");
-        if (!temporaryPhotoAfterBase64) return showToast("Foto bukti setelah perbaikan wajib diunggah!", "warning");
+        const actualRemarks = document.getElementById("maint-actual-remarks") ? document.getElementById("maint-actual-remarks").value.trim() : "";
 
         showToast("Mengarsipkan berkas riwayat pemeliharaan kamar...", "info");
         
@@ -5069,7 +5231,7 @@
           maintenance_id: activeMaintId,
           actual_completion_date: actualDate,
           photo_after_base64: temporaryPhotoAfterBase64,
-          remarks: actualRemarks, // SUNTIKAN: Teruskan teks ulasan penutupan ke parameter backend GAS
+          remarks: actualRemarks, 
           operator_name: currentUser ? currentUser.name : "System Admin"
         };
 
@@ -5078,14 +5240,46 @@
           .then(data => {
             if (data.success) {
               showToast(data.message, "success");
-              temporaryPhotoAfterBase64 = ""; // Reset memory box
-              loadDatabaseState(); // Segarkan data layout
+              temporaryPhotoAfterBase64 = ""; 
+              loadDatabaseState(); 
             } else {
               showToast("Server Error: " + data.message, "danger");
             }
           })
           .catch(() => showToast("Network lost connection transmission", "danger"));
       });
+
+      // =========================================================================
+      // INTERSEPTOR STRUKTUR UTAMA: MENCEGAH TOMBOL OK MENUTUP MODAL JIKA BELUM VALID
+      // =========================================================================
+      if (okBtn) {
+        // Kita kloning tombol atau timpa event handler-nya murni agar tidak bentrok dengan listener global
+        const newOkBtn = okBtn.cloneNode(true);
+        okBtn.parentNode.replaceChild(newOkBtn, okBtn);
+
+        newOkBtn.addEventListener("click", function(e) {
+          const actualDate = document.getElementById("maint-actual-date") ? document.getElementById("maint-actual-date").value : "";
+          const actualRemarks = document.getElementById("maint-actual-remarks") ? document.getElementById("maint-actual-remarks").value.trim() : "";
+          
+          // Validasi Ketat: Jika kosong, berikan peringatan dan JANGAN TUTUP MODAL (return)
+          if (!actualDate) {
+            showToast("Tanggal selesai aktual wajib diisi!", "danger");
+            return; 
+          }
+          if (!actualRemarks) {
+            showToast("Remarks / Catatan penyelesaian wajib diisi!", "danger");
+            return; 
+          }
+          if (!temporaryPhotoAfterBase64 || temporaryPhotoAfterBase64 === "") {
+            showToast("Foto bukti setelah perbaikan wajib diunggah!", "danger");
+            return; 
+          }
+
+          // Jika validasi lolos, jalankan callback kirim data dan tutup modalnya secara manual
+          if (activeConfirmCallback) activeConfirmCallback();
+          document.getElementById("confirm-modal").classList.add("hidden");
+        });
+      }
     }
 
     // Fungsi bantu membaca file gambar setelah perbaikan dan mengubahnya menjadi base64 string
@@ -5116,11 +5310,14 @@
     // PERBAIKAN: Menutup modal edit maintenance sekaligus mengevaluasi alur kembali ke modal pertama
     // =========================================================================
     function closeEditMaintenanceModal() { 
-      // 1. Sembunyikan modal edit maintenance record
+      // 1. Tangkap flag mode deferred SEBELUM form di-reset/dibersihkan
+      const formEl = document.getElementById("edit-maintenance-form");
+      const deferredMode = formEl ? formEl.getAttribute("data-deferred-mode") : null;
+
+      // 2. Sembunyikan modal edit maintenance record
       document.getElementById("edit-maintenance-modal").classList.add("hidden"); 
       
-      // 2. Bersihkan penampung form dan atribut data-deferred agar kembali steril
-      const formEl = document.getElementById("edit-maintenance-form");
+      // 3. Bersihkan penampung form dan atribut data-deferred agar kembali steril
       if (formEl) {
         formEl.reset();
         formEl.removeAttribute("data-deferred-status");
@@ -5129,8 +5326,12 @@
       }
       temporaryUploadedPhotos = [];
       
-      // 3. LOGIKA ARAH BALIK: Jika sebelumnya datang dari modal Manage Room (Detail Kamar), panggil balik modal pertama
-      if (cameFromRoomDetail) {
+      // 4. LOGIKA ARAH BALIK DINAMIS: Deteksi rute asal pembukaan modal pemeliharaan
+      if (deferredMode === "add") {
+        // Jika dari alur pembuatan kamar baru, panggil balik modal Add Room
+        toggleAddRoomModal(true);
+      } else if (cameFromRoomDetail) {
+        // Jika dari alur kelola kamar lama, panggil balik modal Manage Details
         cameFromRoomDetail = false; // Reset flag agar kembali netral
         toggleRoomDetailModal(true);
       }
@@ -5227,12 +5428,22 @@
         const status = document.getElementById("new-room-status").value;
         const remarksBox = document.getElementById("add-room-remarks-container");
         const submitBtn = document.getElementById("add-room-form").querySelector("button[type='submit']");
+        const classBox = document.getElementById("new-room-classification-container");
         
-        if (status === "Maintenance" || status === "Broken") {
+        if (status === "Maintenance") {
+          // - Maintenance -> hide kolom remarks -> muncul kolom klasifikasi -> Continue
           if (remarksBox) remarksBox.classList.add("hidden");
+          if (classBox) classBox.classList.remove("hidden");
+          if (submitBtn) submitBtn.textContent = "Continue";
+        } else if (status === "Broken") {
+          // - Broken -> hide kolom remarks & kolom klasifikasi -> Continue
+          if (remarksBox) remarksBox.classList.add("hidden");
+          if (classBox) classBox.classList.add("hidden");
           if (submitBtn) submitBtn.textContent = "Continue";
         } else {
+          // - Ready -> muncul kolom remarks -> hide kolom klasifikasi -> Save Room
           if (remarksBox) remarksBox.classList.remove("hidden");
+          if (classBox) classBox.classList.add("hidden");
           if (submitBtn) submitBtn.textContent = "Save Room";
         }
       } else if (mode === 'edit') {
@@ -5248,8 +5459,27 @@
             submitBtn.className = "px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-xs shadow-md transition-colors";
           }
         } else {
+          // 🌟 PERBAIKAN: Jika status Ready, paksa kolom Remarks tampil kembali (Remove hidden)
           if (remarksBox) remarksBox.classList.remove("hidden");
-          if (submitBtn && submitBtn.id === "save-room-changes-btn") submitBtn.textContent = "Save Changes";
+          if (submitBtn) {
+            submitBtn.textContent = "Save Changes";
+            submitBtn.disabled = false;
+            submitBtn.className = "px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-xs shadow-md transition-colors";
+          }
+        }
+      }
+    }
+
+    // 🌟 SUNTIKAN BARU: Fungsi Pengendali Visibilitas Klasifikasi Form Kedua (Broken = Hide)
+    function handleMaintStatusModalToggle() {
+      const maintStatus = document.getElementById("edit-maint-status").value;
+      const maintClassContainer = document.getElementById("maint-classification-container");
+      
+      if (maintClassContainer) {
+        if (maintStatus === "Broken") {
+          maintClassContainer.classList.add("hidden");
+        } else {
+          maintClassContainer.classList.remove("hidden");
         }
       }
     }
@@ -5526,6 +5756,12 @@ function handleLoginSubmit(event) {
 }
 
 function handleSignOut() {
+  // PAKSA TOMBOL OK MUNCUL KEMBALI DI LAYAR
+  const okBtn = document.getElementById("confirm-ok-btn");
+  if (okBtn) {
+    okBtn.classList.remove("hidden");
+  }
+
   openCustomConfirm("Sign Out Confirmation", "Are you sure you want to end your current operational session?", () => {
     localStorage.removeItem("amms_current_user");
     currentUser = null;
@@ -5740,9 +5976,30 @@ document.addEventListener("keydown", function(event) {
       // SUNTIKAN UTAMA: Interseptor khusus tombol ESC ketika modal Edit Maintenance sedang aktif
       else if (activeModalId === "edit-maintenance-modal") {
         if (typeof closeEditMaintenanceModal === 'function') {
-          closeEditMaintenanceModal(); // Fungsi ini akan otomatis membaca cameFromRoomDetail dan membuka kembali modal pertama
+          closeEditMaintenanceModal(); 
         } else {
           document.getElementById("edit-maintenance-modal").classList.add("hidden");
+        }
+      }
+      // 🌟 PERBAIKAN MUTLAK KONDISI ESC CONFIRMATION CHECKOUT (SINKRON CONTEXT):
+      else if (activeModalId === "confirm-modal") {
+        event.preventDefault();
+        
+        // Cek murni flag pelacak halaman
+        if (typeof cameFromRoomDetail !== 'undefined' && cameFromRoomDetail) {
+          // Jika true (dari Manage Room), picu tombol cancel kustom agar kembali ke modal detail
+          const cancelBtn = document.getElementById("confirm-cancel-btn");
+          if (cancelBtn) cancelBtn.click();
+        } else {
+          // Jika false (dari Halaman Utama Kartu), langsung tutup murni di tempat tanpa memicu modal detail!
+          document.getElementById("confirm-modal").classList.add("hidden");
+          document.getElementById("room-detail-modal").classList.add("hidden");
+          cameFromRoomDetail = false;
+          
+          const cancelBtn = document.getElementById("confirm-cancel-btn");
+          if (cancelBtn) {
+            cancelBtn.onclick = function() { document.getElementById("confirm-modal").classList.add("hidden"); };
+          }
         }
       }
       else {
@@ -5890,6 +6147,20 @@ window.onload = function() {
     }
   }, 1000); // 1000 milidetik = 1 Detik murni
 };
+
+// 🔽 TARO KODE PEMICU ESC KEYBOARD TEPAT DI SINI (DI LUAR WINDOW.ONLOAD) 🔽
+window.addEventListener('keydown', function (event) {
+  if (event.key === 'Escape' || event.key === 'Esc') {
+    const maintModal = document.getElementById("edit-maintenance-modal");
+    // Jika modal edit-maintenance sedang terbuka di layar, batalkan event bawaan dan eksekusi alur kembali
+    if (maintModal && !maintModal.classList.contains("hidden")) {
+      event.preventDefault();
+      closeEditMaintenanceModal();
+    }
+  }
+});
+// 🔼 =================================================================== 🔼
+
   </script>
 </body>
 </html>
