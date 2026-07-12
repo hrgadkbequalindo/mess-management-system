@@ -240,7 +240,7 @@
   </div>
 
   <!-- LIGHTBOX IMAGE ZOOM MODAL (FOTO PROFIL DEPAN - TOMBOL X DI DALAM FRAME GAMBAR) -->
-  <div id="lightbox-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center hidden" onclick="closeLightbox(event)">
+  <div id="lightbox-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[230] flex items-center justify-center hidden" onclick="closeLightbox(event)">
     <div class="relative max-w-4xl max-h-[90vh] p-4 flex flex-col items-center justify-center pointer-events-auto" onclick="event.stopPropagation()">
       
       <button onclick="closeLightbox(event)" class="absolute -top-7 right-4 text-white hover:text-slate-300 text-base bg-slate-800/60 hover:bg-slate-800/80 w-8 h-8 rounded-full flex items-center justify-center transition-colors shadow-lg z-10">
@@ -259,7 +259,7 @@
     
     <div class="relative max-w-4xl max-h-[90vh] p-4 flex flex-col items-center justify-center inline-flex">
       
-      <button onclick="document.getElementById('custom-photo-lightbox').classList.add('hidden'); if(cameFromMaintDetail){ cameFromMaintDetail = false; document.getElementById('confirm-modal').classList.remove('hidden'); }" class="absolute -top-3 -right-3 text-white hover:text-slate-300 text-base bg-slate-800/80 hover:bg-slate-800 w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-xl border border-white/10 z-[80]">
+      <button onclick="closeCustomPhotoLightbox()" class="absolute -top-3 -right-3 text-white hover:text-slate-300 text-base bg-slate-800/80 hover:bg-slate-800 w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-xl border border-white/10 z-[80]">
         <i class="fa-solid fa-xmark"></i>
       </button>
 
@@ -347,7 +347,11 @@
           <div id="edit-maint-photos-preview" class="grid grid-cols-4 gap-2 mt-2"></div>
         </div>
 
-        <div class="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
+        <!-- PERBAIKAN: Menyisipkan tombol delete kustom terintegrasi dengan REST API -->
+        <div class="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800 items-center">
+          <button type="button" onclick="handleDeleteMaintenanceTicket()" class="mr-auto px-4 py-2 text-xs bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold rounded-xl flex items-center gap-1.5 transition-colors">
+            <i class="fa-solid fa-trash-can text-xs"></i> Delete Ticket
+          </button>
           <button type="button" onclick="closeEditMaintenanceModal()" class="px-4 py-2 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg transition-colors">
             Cancel
           </button>
@@ -1562,6 +1566,7 @@
                       <button type="button" onclick="activeMaintClassFilter='All'; updateMaintFilterUI(); renderMmsMaintenance();" id="btn-maint-class-all" class="px-2.5 py-1 rounded bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 transition-colors">All</button>
                       <button type="button" onclick="activeMaintClassFilter='Ringan'; updateMaintFilterUI(); renderMmsMaintenance();" id="btn-maint-class-ringan" class="px-2.5 py-1 rounded bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 transition-colors">Ringan</button>
                       <button type="button" onclick="activeMaintClassFilter='Sedang'; updateMaintFilterUI(); renderMmsMaintenance();" id="btn-maint-class-sedang" class="px-2.5 py-1 rounded bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 transition-colors">Sedang</button>
+                      <button type="button" onclick="activeMaintClassFilter='Berat'; updateMaintFilterUI(); renderMmsMaintenance();" id="btn-maint-class-berat" class="px-2.5 py-1 rounded bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 transition-colors">Berat</button>
                     </div>
                   </div>
                 </div>
@@ -1747,7 +1752,7 @@
 
   </div>
 
-  <div id="upload-choice-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[60] flex items-center justify-center hidden">
+  <div id="upload-choice-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[220] flex items-center justify-center hidden">
     <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-xl max-w-xs w-full p-5 mx-4 animate-fade-in text-center border border-slate-100 dark:border-slate-800">
       
       <!-- Tambahkan ID choice-modal-icon -->
@@ -1777,8 +1782,8 @@
 
   <input type="file" id="maint-camera-input" accept="image/*" capture="environment" class="hidden" onchange="previewMaintenancePhotos(event)">
   <input type="file" id="maint-gallery-input" accept="image/*" multiple class="hidden" onchange="previewMaintenancePhotos(event)">
-  <input type="file" id="asset-camera-input" accept="image/*" capture="environment" class="hidden" onchange="previewAssetPhotos(event)">
-  <input type="file" id="asset-gallery-input" accept="image/*" multiple class="hidden" onchange="previewAssetPhotos(event)">
+  <input type="file" id="maint-after-camera-input" accept="image/*" capture="environment" class="hidden" onchange="previewMaintAfterPhotos(event)">
+  <input type="file" id="maint-after-gallery-input" accept="image/*" multiple class="hidden" onchange="previewMaintAfterPhotos(event)">
 
   <script>
     let isAssetMenuExpanded = true; 
@@ -1796,6 +1801,11 @@
     // PERBAIKAN MUTLAK: Mengunci interupsi re-render otomatis saat proses konfirmasi berantai berjalan
     let isCutiBackModalOpen = false;
 
+    // SUNTIKAN STATE BARU: Melacak jumlah foto yang dihapus selama sesi edit
+    let photosDeletedLogCount = 0;
+    let temporaryDeletedPhotos = []; // Menampung string URL foto yang dihapus oleh operator
+    let lightboxSource = ""; // SUNTIKAN: Melacak asal pemanggilan zoom foto ('detail', 'edit', atau 'cover')
+
     // --- SUNTIKAN STATE BARU: PAGINATION & SUB-BLOK FILTER (AMMAN) ---
     let roomCurrentPage = 1;
     const roomItemsPerPage = 15; // Mengunci mati denah tepat 5 Kolom x 3 Baris = 15 Kamar
@@ -1808,7 +1818,45 @@
     // =========================================================================
     // SUNTIKAN ENDPOINT URL API UNTUK SINKRONISASI GO-LIVE GOOGLE SHEETS
     // =========================================================================
-    const API_URL = "https://script.google.com/macros/s/AKfycbyi-HV0gQA7BfGM0Y-YiKnV-HYMYvpQ2TjatWoWlfpf_PFNueI2MBhkm6JfXueYoiAX/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbzYPP6YXk52GspXv3fnh_nqjaz88Dqs_pk87_q7HZTtsrK6cDTW_a4RU6OixW_LkYRx/exec";
+
+    // ✅ FUNGSI HELPER MUTLAK: Mengonversi Tautan Google Drive Menjadi Direct Hotlink Gambar Mentah Anti-CORS
+    function getDirectMaintImgUrl(rawUrl) {
+      if (!rawUrl || rawUrl === "-" || rawUrl.trim() === "") {
+        return "https://placehold.co/600x400?text=No+Image";
+      }
+      
+      // Bersihkan jika ada format JSON sisa pembacaan array tabel Locations kolom L
+      let targetUrl = rawUrl;
+      if (rawUrl.startsWith("[") || rawUrl.startsWith("\"")) {
+        try {
+          let parsed = JSON.parse(rawUrl);
+          targetUrl = Array.isArray(parsed) ? parsed[0] : parsed;
+        } catch(e) {}
+      }
+      
+      // Deteksi jika string memuat beberapa URL sekaligus yang dipisahkan koma (Maintenance_History)
+      if (targetUrl.includes(",")) {
+        targetUrl = targetUrl.split(",")[0].trim();
+      }
+      
+      // Interseptor Konversi Otomatis: Ubah tautan drive halaman html menjadi link direct view stream
+      if (targetUrl.includes("drive.google.com") || targetUrl.includes("docs.google.com")) {
+        let fileId = "";
+        if (targetUrl.includes("id=")) {
+          fileId = targetUrl.split("id=")[1].split("&")[0];
+        } else if (targetUrl.includes("/d/")) {
+          let parts = targetUrl.split("/d/");
+          if (parts[1]) {
+            fileId = parts[1].split("/")[0];
+          }
+        }
+        if (fileId) {
+          return "https://lh3.googleusercontent.com/d/" + fileId;
+        }
+      }
+      return targetUrl;
+    }
 
     // =========================================================================
     // PERBAIKAN POIN 3: MENYELARASKAN DATA KUNCI AKUN MENJADI HURUF KECIL (LOWERCASE)
@@ -2929,9 +2977,12 @@
       // =======================================================================
       // KONDISI KHUSUS FILTER STATUS 'FIX' (MEMBACA LOG AKSI FIX READY DI HISTORY)
       // =======================================================================
+      // =======================================================================
+      // KONDISI KHUSUS FILTER STATUS 'FIX' (MEMBACA LOG AKSI FIX READY DI HISTORY)
+      // =======================================================================
       if (activeMaintStatusFilter === "Fix") {
         // PERBAIKAN: Membaca murni dari mockMaintHistory yang berisi data Maintenance_History Google Sheets
-        let archivedFixLogs = mockMaintHistory.filter(h => {
+        let baseFilteredFix = mockMaintHistory.filter(h => {
           const matchesFloor = (activeMaintFloorFilter === "All" || h.floor === activeMaintFloorFilter);
           const matchesSearch = h.room_name ? h.room_name.toLowerCase().includes(searchMaintQuery) : false;
           
@@ -2950,10 +3001,24 @@
           return matchesFloor && matchesSearch && matchesSubBlock && matchesClass;
         });
 
+        // =========================================================================
+        // FIX ELIMINASI DUPLIKAT: filter agar sistem hanya memuat 1 kartu unik per maintenance_id
+        // =========================================================================
+        let seenMaintIds = {};
+        let archivedFixLogs = baseFilteredFix.filter(h => {
+          if (!h.maintenance_id || h.maintenance_id === "-") return true; // ijinkan jika id kosong
+          if (seenMaintIds[h.maintenance_id]) {
+            return false; // Skip jika maintenance_id ini sudah pernah dimasukkan ke kartu sebelumnya
+          }
+          seenMaintIds[h.maintenance_id] = true;
+          return true;
+        });
+        // =========================================================================
+
         const headerDiv = document.createElement("div");
         headerDiv.className = "w-full mt-6 mb-2 flex items-center select-none";
         headerDiv.innerHTML = `
-          <div class="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/60 rounded-xl border border-emerald-100/60 dark:border-emerald-900/40 shadow-xs">
+          <div class="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/60 rounded-xl border border-emerald-100/60 dark:border-indigo-900/40 shadow-xs">
             <i class="fa-solid fa-circle-check text-emerald-600 text-xs"></i>
             <span class="text-xs font-black text-emerald-700 dark:text-emerald-400 tracking-wider uppercase">ARCHIVED RESOLVED ROOMS (FIX LOGS)</span>
             <span class="bg-emerald-200/50 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-300 text-[10px] px-2 py-0.5 font-bold rounded-md">${archivedFixLogs.length} Records</span>
@@ -2971,25 +3036,30 @@
           const diffTime = Math.abs(end.getTime() - start.getTime());
           const durationDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
 
-          const imgUrl = h.photo_url_after || h.photo_url_before || h.photo_url || "";
-          const photoHtml = (imgUrl && imgUrl.startsWith("http"))
-            ? `<img src="${imgUrl}" class="w-20 h-20 rounded-xl object-cover border border-slate-200 dark:border-slate-800 shadow-xs cursor-pointer shrink-0" onclick="zoomImage('${imgUrl}', 'Resolved Visual ${h.room_name}')">`
+          // FIX COVER IMAGE RUSAK: Bungkus link Drive mentah menggunakan fungsi konversi hotlink kustom getDirectMaintImgUrl
+          const rawImgUrl = h.photo_url_after || h.photo_url_before || h.photo_url || "";
+          const cleanCoverUrl = getDirectMaintImgUrl(rawImgUrl);
+          
+          const photoHtml = (rawImgUrl && rawImgUrl !== "-")
+            ? `<img src="${cleanCoverUrl}" class="w-20 h-20 rounded-xl object-cover border border-slate-200 dark:border-slate-800 shadow-xs cursor-pointer shrink-0" onclick="zoomImage('${cleanCoverUrl}', 'Resolved Visual ${h.room_name}', 'cover')">`
             : `<div class="w-20 h-20 rounded-xl bg-slate-50 dark:bg-slate-800 border border-dashed border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center text-slate-400 text-[9px] text-center shrink-0 p-1"><span>No Photo</span></div>`;
 
-          // PERBAIKAN VISUALISASI BADGE: Pencocokan warna kustom yang toleran terhadap perbedaan kapitalisasi huruf database
+          // PERBAIKAN VISUALISASI BADGE: Pencocokan warna kustom yang sekarang mendukung klasifikasi "Berat"
           let classBadge = "";
           if (h.classification && String(h.classification).trim() !== "") {
             const classCheckNormalized = String(h.classification).trim().toLowerCase();
             
-            // PERBAIKAN MUTLAK: Jika klasifikasi di database bernilai "berat", sembunyikan total badge-nya dari visual UI Fix Logs
-            if (classCheckNormalized !== "berat") {
-              let classColorStyle = (classCheckNormalized === "sedang") 
-                ? "bg-orange-50 text-orange-700 border-orange-200 font-extrabold dark:bg-orange-950/40 dark:text-orange-400 dark:border-orange-900/50" 
-                : "bg-indigo-50 text-indigo-600 font-bold border-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-900/50";
-              
-              const formattedClassText = classCheckNormalized.charAt(0).toUpperCase() + classCheckNormalized.slice(1);
-              classBadge = `<span class="px-1.5 py-0.5 text-[8px] rounded border ${classColorStyle}">${formattedClassText}</span>`;
+            // Buka kunci pemblokiran: Sekarang ijinkan "Berat" membuat warnanya sendiri secara kontras
+            let classColorStyle = "bg-indigo-50 text-indigo-600 font-bold border-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-900/50";
+            
+            if (classCheckNormalized === "sedang") {
+              classColorStyle = "bg-orange-50 text-orange-700 border-orange-200 font-extrabold dark:bg-orange-950/40 dark:text-orange-400 dark:border-orange-900/50";
+            } else if (classCheckNormalized === "berat") {
+              classColorStyle = "bg-rose-50 text-rose-700 border-rose-200 font-black dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900/50";
             }
+            
+            const formattedClassText = classCheckNormalized.charAt(0).toUpperCase() + classCheckNormalized.slice(1);
+            classBadge = `<span class="px-1.5 py-0.5 text-[8px] rounded border ${classColorStyle}">${formattedClassText}</span>`;
           }
 
           const card = document.createElement("div");
@@ -3138,8 +3208,11 @@
           const displayedAffectedBeds = (occupantsCount > 0) ? 0 : parseInt(room.capacity || 4);
 
           const currentImgUrl = room.photo_url || "";
-          const photoHtml = (currentImgUrl && currentImgUrl.startsWith("http"))
-            ? `<img src="${currentImgUrl}" class="w-20 h-20 rounded-xl object-cover border border-slate-200 dark:border-slate-800 shadow-xs cursor-pointer shrink-0" onclick="zoomImage('${currentImgUrl}', 'Visual ${room.name}')">`
+          // Proteksi Multi-Arah: Paksa URL apa pun dikonversi menjadi tautan stream lh3 yang valid dan anti-pecah
+          let cleanMaintCardUrl = getDirectMaintImgUrl(currentImgUrl);
+          
+          const photoHtml = (currentImgUrl && currentImgUrl !== "-" && currentImgUrl !== "")
+            ? `<img src="${cleanMaintCardUrl}" class="w-20 h-20 rounded-xl object-cover border border-slate-200 dark:border-slate-800 shadow-xs cursor-pointer shrink-0" onclick="zoomImage('${cleanMaintCardUrl}', 'Visual ${room.name}', 'cover')">`
             : `<div class="w-20 h-20 rounded-xl bg-slate-50 dark:bg-slate-800 border border-dashed border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center text-slate-400 text-[9px] text-center shrink-0 p-1"><span>No Photo</span></div>`;
 
           let sideIndicatorColor = room.status === "Broken" ? "border-l-rose-800" : "border-l-amber-500";
@@ -3186,7 +3259,7 @@
                   </div>
                   <div>
                     <span class="text-slate-400 font-bold block uppercase text-[8px] tracking-wider flex items-center">Est. Completion ${warningBadgeHtml}</span>
-                    <span class="${textEstColorClass} block mt-0.5 text-[10px]">${formatDateDDMMMYYYY(room.Expected_Completion || room.expected_completion)}</span>
+                    <span class="${textEstColorClass} font-extrabold block mt-0.5 text-[10px]">${formatDateDDMMMYYYY(room.Expected_Completion || room.expected_completion)}</span>
                   </div>
                   <div>
                     <span class="text-slate-400 font-bold block uppercase text-[8px] tracking-wider">Duration Logged</span>
@@ -3242,14 +3315,16 @@
         }
       }
 
-      // 3. Sinkronisasi Tombol Filter Klasifikasi (All, Ringan, Sedang) ke Standar Tema Indigo
+      // 3. Sinkronisasi Tombol Filter Klasifikasi (All, Ringan, Sedang, Berat) ke Standar Tema Indigo
       const btnAll = document.getElementById("btn-maint-class-all");
       const btnRingan = document.getElementById("btn-maint-class-ringan");
       const btnSedang = document.getElementById("btn-maint-class-sedang");
+      const btnBerat = document.getElementById("btn-maint-class-berat");
 
       if (btnAll) btnAll.className = (activeMaintClassFilter === "All" ? activeCls : inactiveCls);
       if (btnRingan) btnRingan.className = (activeMaintClassFilter === "Ringan" ? activeCls : inactiveCls);
       if (btnSedang) btnSedang.className = (activeMaintClassFilter === "Sedang" ? activeCls : inactiveCls);
+      if (btnBerat) btnBerat.className = (activeMaintClassFilter === "Berat" ? activeCls : inactiveCls);
     }
     // =========================================================================
 
@@ -3271,12 +3346,28 @@
       }
 
       let photoHtml = '<span class="text-slate-400 dark:text-slate-500 italic block mt-1">No historical breakdown reference photo.</span>';
-      if (detailImgUrl && detailImgUrl.startsWith("http")) {
-        photoHtml = `
-          <div class="flex flex-wrap gap-2 mt-1.5 animate-fade-in">
-            <img src="${detailImgUrl}" class="h-16 w-24 rounded-lg object-cover border border-slate-200 dark:border-slate-800 shadow-xs cursor-pointer hover:scale-[1.03] transition-all" onclick="zoomImage('${detailImgUrl}', 'Breakdown Visual Room ${room.name}')">
-          </div>
-        `;
+      let photoArray = [];
+      
+      // Ambil seluruh isi array foto keluhan kamar terdaftar dari database Sheets
+      if (room.photo_urls && Array.isArray(room.photo_urls)) {
+        photoArray = room.photo_urls;
+      } else if (room.photo_url && room.photo_url !== "-" && room.photo_url !== "") {
+        // Cek jika data berbentuk string JSON dari sheet Locations kolom L
+        if (room.photo_url.startsWith("[")) {
+          try { photoArray = JSON.parse(room.photo_url); } catch(e) { photoArray = [room.photo_url]; }
+        } else {
+          photoArray = [room.photo_url];
+        }
+      }
+
+      // ✅ RE-RENDER MULTI-FOTO DENGAN DIRECT HOTLINK LINK DRIVE
+      if (photoArray.length > 0) {
+        photoHtml = `<div class="flex flex-wrap gap-2 mt-1.5 animate-fade-in">`;
+        photoArray.forEach((url, idx) => {
+          let cleanUrl = getDirectMaintImgUrl(url);
+          photoHtml += `<img src="${cleanUrl}" class="h-16 w-24 rounded-lg object-cover border border-slate-200 dark:border-slate-800 shadow-xs cursor-pointer hover:scale-[1.03] transition-all" onclick="zoomImage('${cleanUrl}', 'Visual ${room.name} - Foto ${idx+1}', 'detail')">`;
+        });
+        photoHtml += `</div>`;
       }
 
       const start = room.reported_date ? new Date(room.reported_date) : new Date();
@@ -3318,17 +3409,25 @@
       document.getElementById("confirm-message").innerHTML = modalContent; 
       document.getElementById("confirm-modal").classList.remove("hidden");
 
-      // LOGIKA EVALUASI TOMBOL CANCEL KHUSUS: Mengembalikan overlay modal detail kamar asli jika diakses lewat tombol pintas
+      // LOGIKA EVALUASI TOMBOL CANCEL KHUSUS: Diperbaiki mengikuti bendera pelacak cameFromRoomDetail secara presisi
       const cancelBtn = document.getElementById("confirm-cancel-btn");
       if (cancelBtn) {
         cancelBtn.onclick = function() {
           document.getElementById("confirm-modal").classList.add("hidden");
           const editRoomId = document.getElementById("edit-room-id").value;
-          // Jika edit-room-modal terdeteksi memiliki ID aktif (berarti diakses dari dalam), buka kembali modal utamanya
-          if (editRoomId && lastOpenedRoomDetailId === editRoomId) {
+          
+          // =========================================================================
+          // SINKRONISASI NAVIGASI: Hanya buka kembali Room Detail jika sebelumnya dipicu dari dalam Manage Room
+          // =========================================================================
+          if (cameFromRoomDetail && editRoomId && lastOpenedRoomDetailId === editRoomId) {
             toggleRoomDetailModal(true);
+          } else {
+            // Jika dipicu dari halaman awal (luar kartu), bersihkan flag pelacak secara steril
+            cameFromRoomDetail = false;
           }
-          cancelBtn.onclick = null; // Sterilkan fungsi handler setelah digunakan
+          // =========================================================================
+          
+          cancelBtn.onclick = function() { document.getElementById("confirm-modal").classList.add("hidden"); }; // Kembalikan ke penutup murni default
         };
       }
       
@@ -3409,8 +3508,65 @@
       const log = mockMaintHistory.find(h => h.history_id === historyId);
       if (!log) return showToast("Data arsip riwayat perbaikan tidak ditemukan.", "warning");
 
-      let imgBeforeHtml = log.photo_url_before ? `<img src="${log.photo_url_before}" class="h-16 w-24 rounded-lg object-cover border cursor-pointer mx-auto shadow-xs" onclick="zoomImage('${log.photo_url_before}', 'Sebelum')">` : '<span class="text-slate-400 italic text-[10px]">No Photo</span>';
-      let imgAfterHtml = log.photo_url_after ? `<img src="${log.photo_url_after}" class="h-16 w-24 rounded-lg object-cover border border-emerald-300 cursor-pointer mx-auto shadow-xs" onclick="zoomImage('${log.photo_url_after}', 'Setelah')">` : '<span class="text-slate-400 italic text-[10px]">No Photo</span>';
+      // =========================================================================
+      // RE-ARCHITECT PARSING GALERI MULTI-PHOTO SEBELUM & SESUDAH (SINKRON PRESISI)
+      // =========================================================================
+      // 1. Kompilasi Seluruh Foto Sebelum dari siklus CHK-ID yang sama di memori lokal
+      let beforePhotosArray = [];
+      if (log.maintenance_id) {
+        mockMaintHistory.forEach(h => {
+          if (h.maintenance_id === log.maintenance_id && h.photo_url_before && h.photo_url_before !== "-") {
+            // Pecah jika di database termuat pemisah koma sisa data lama
+            h.photo_url_before.split(",").forEach(url => {
+              let clean = url.trim();
+              if (clean && !beforePhotosArray.includes(clean)) beforePhotosArray.push(clean);
+            });
+          }
+        });
+      }
+      if (beforePhotosArray.length === 0 && log.photo_url_before && log.photo_url_before !== "-") {
+        beforePhotosArray = log.photo_url_before.split(",").map(u => u.trim());
+      }
+
+      // 2. Kompilasi Seluruh Foto Sesudah dari siklus CHK-ID yang sama di memori lokal
+      let afterPhotosArray = [];
+      if (log.maintenance_id) {
+        mockMaintHistory.forEach(h => {
+          if (h.maintenance_id === log.maintenance_id && h.photo_url_after && h.photo_url_after !== "-") {
+            h.photo_url_after.split(",").forEach(url => {
+              let clean = url.trim();
+              if (clean && !afterPhotosArray.includes(clean)) afterPhotosArray.push(clean);
+            });
+          }
+        });
+      }
+      if (afterPhotosArray.length === 0 && log.photo_url_after && log.photo_url_after !== "-") {
+        afterPhotosArray = log.photo_url_after.split(",").map(u => u.trim());
+      }
+
+      // 3. Merender komponen visual Grid Galeri Gambar
+      let imgBeforeHtml = '<div class="flex flex-wrap gap-1.5 justify-center">';
+      if (beforePhotosArray.length > 0) {
+        beforePhotosArray.forEach((url, i) => {
+          let cleanUrl = getDirectMaintImgUrl(url);
+          imgBeforeHtml += `<img src="${cleanUrl}" class="h-12 w-16 rounded-md object-cover border cursor-pointer hover:scale-105 transition-all shadow-xs" onclick="zoomImage('${cleanUrl}', 'Sebelum - Foto ${i+1}', 'detail')">`;
+        });
+      } else {
+        imgBeforeHtml += '<span class="text-slate-400 italic text-[10px]">No Photo</span>';
+      }
+      imgBeforeHtml += '</div>';
+
+      let imgAfterHtml = '<div class="flex flex-wrap gap-1.5 justify-center">';
+      if (afterPhotosArray.length > 0) {
+        afterPhotosArray.forEach((url, i) => {
+          let cleanUrl = getDirectMaintImgUrl(url);
+          imgAfterHtml += `<img src="${cleanUrl}" class="h-12 w-16 rounded-md object-cover border border-emerald-300 cursor-pointer hover:scale-105 transition-all shadow-xs" onclick="zoomImage('${cleanUrl}', 'Setelah - Foto ${i+1}', 'detail')">`;
+        });
+      } else {
+        imgAfterHtml += '<span class="text-slate-400 italic text-[10px]">No Photo</span>';
+      }
+      imgAfterHtml += '</div>';
+      // =========================================================================
 
       // 🔽 TARO KODE PERBAIKAN DINAMIS TEPAT DI SINI 🔽
       const normalizedClass = String(log.classification || "").trim().toLowerCase();
@@ -3421,30 +3577,30 @@
         <div class="relative space-y-3.5 text-left text-xs text-slate-700 dark:text-slate-300">
           <button onclick="document.getElementById('confirm-modal').classList.add('hidden'); const okBtn = document.getElementById('confirm-ok-btn'); if (okBtn) okBtn.classList.remove('hidden');" class="absolute -top-10 -right-2 text-slate-400 hover:text-slate-600 text-lg p-1" title="Close"><i class="fa-solid fa-xmark"></i></button>
           <div class="grid grid-cols-2 gap-4 border-b pb-2">
-            <div><span class="text-slate-400 block text-[9px] uppercase font-bold">Room Name</span><strong class="text-slate-900 dark:text-white text-sm">${log.room_name || '-'}</strong></div>
-            <div><span class="text-slate-400 block text-[9px] uppercase font-bold">Area Mess</span><p class="font-semibold">${log.floor || '-'}</p></div>
+            <div><span class="text-slate-400 block text-[9px] font-bold">Room Name</span><p class="font-semibold">${log.room_name || '-'}</strong></div>
+            <div><span class="text-slate-400 block text-[9px] font-bold">Area Mess</span><p class="font-semibold">${log.floor || '-'}</p></div>
           </div>
           <div class="grid grid-cols-2 gap-4 border-b pb-2">
-            <div><span class="text-slate-400 block text-[9px] uppercase font-bold">Klasifikasi</span><p class="font-bold ${classTextColorClass}">${displayClassText}</p></div>
-            <div><span class="text-slate-400 block text-[9px] uppercase font-bold">Closed By Operator</span><p class="font-bold text-slate-800 dark:text-slate-200">${log.recorded_by || 'Admin'}</p></div>
+            <div><span class="text-slate-400 block text-[9px] font-bold">Classification</span><p class="font-semibold">${displayClassText}</p></div>
+            <div><span class="text-slate-400 block text-[9px] font-bold">Closed By</span><p class="font-semibold">${log.recorded_by || 'Admin'}</p></div>
           </div>
           <div class="grid grid-cols-2 gap-4 border-b pb-2">
-            <div><span class="text-slate-400 block text-[9px] uppercase font-bold">Tanggal Lapor</span><p class="font-bold text-amber-600">${formatDateDDMMMYYYY(log.reported_date)}</p></div>
-            <div><span class="text-slate-400 block text-[9px] uppercase font-bold">Tanggal Selesai (Fix)</span><p class="font-bold text-emerald-600">${formatDateDDMMMYYYY(log.actual_completion)}</p></div>
+            <div><span class="text-slate-400 block text-[9px] font-bold">Date Reported</span><p class="font-semibold">${formatDateDDMMMYYYY(log.reported_date)}</p></div>
+            <div><span class="text-slate-400 block text-[9px] font-bold">Actual Date Completion</span><p class="font-semibold">${formatDateDDMMMYYYY(log.actual_completion)}</p></div>
           </div>
           <div class="grid grid-cols-2 gap-4 border-b pb-2">
-            <div><span class="text-slate-400 block text-[9px] uppercase font-bold">Tanggal Input Data (Today)</span><p class="font-bold text-indigo-600">${formatDateDDMMMYYYY(log.date || log.actual_completion)}</p></div>
+            <div><span class="text-slate-400 block text-[9px] font-bold">Submitted Date</span><p class="font-semibold">${formatDateDDMMMYYYY(log.date || log.actual_completion)}</p></div>
             <div></div>
           </div>
-          <div><span class="text-slate-400 block text-[9px] uppercase font-bold">Resolution Notes / Remarks</span><p class="bg-slate-50 dark:bg-slate-950 p-2.5 rounded-lg border text-slate-800 dark:text-slate-200 mt-1 leading-relaxed">${log.remarks || log.notes || '-'}</p></div>
+          <div><span class="text-slate-400 block text-[9px] font-bold">Remarks / Notes</span><p class="bg-slate-50 dark:bg-slate-950 p-2.5 rounded-lg border text-slate-800 dark:text-slate-200 mt-1 leading-relaxed">${log.remarks || log.notes || '-'}</p></div>
           <div class="grid grid-cols-2 gap-4 pt-1 text-center border-t border-dashed mt-2 pt-2">
-            <div><span class="text-slate-400 block text-[9px] uppercase font-bold mb-1">Visual Sebelum (Broken)</span>${imgBeforeHtml}</div>
-            <div><span class="text-slate-400 block text-[9px] uppercase font-bold mb-1">Visual Setelah (Fixed)</span>${imgAfterHtml}</div>
+            <div><span class="text-slate-400 block text-[9px] font-bold mb-1">Documentation (Before)</span>${imgBeforeHtml}</div>
+            <div><span class="text-slate-400 block text-[9px] font-bold mb-1">Documentation (After)</span>${imgAfterHtml}</div>
           </div>
         </div>
       `;
 
-      document.getElementById("confirm-title").textContent = "📄 Archived Maintenance Lifecycle Log";
+      document.getElementById("confirm-title").textContent = "📄 Resolved Detail Maintenance Log";
       document.getElementById("confirm-message").innerHTML = modalContent; 
       document.getElementById("confirm-modal").classList.remove("hidden");
       
@@ -3496,15 +3652,22 @@
       document.getElementById("maint-camera-input").value = "";
       document.getElementById("maint-gallery-input").value = "";
       
-      // PERBAIKAN: Konversi link drive ke link direct stream sebelum masuk preview edit report
-      let rawUrl = room.photo_url || "";
-      if (rawUrl && rawUrl.includes("drive.google.com")) {
-        let fileId = "";
-        if (rawUrl.includes("id=")) fileId = rawUrl.split("id=")[1].split("&")[0];
-        else if (rawUrl.includes("/d/")) fileId = rawUrl.split("/d/")[1].split("/")[0];
-        if (fileId) rawUrl = "https://lh3.googleusercontent.com/d/" + fileId;
+      // ✅ SUNTIKAN UTAMA MULTI-PHOTO SINKRONISASI UNTUK MODAL PREVIEW EDIT
+      let photoArray = [];
+      if (room.photo_urls && Array.isArray(room.photo_urls) && room.photo_urls.length > 0) {
+        photoArray = [...room.photo_urls];
+      } else if (room.photo_urls && typeof room.photo_urls === "string" && room.photo_urls.startsWith("[")) {
+        try { photoArray = JSON.parse(room.photo_urls); } catch(e) {}
+      } else if (room.photo_url && room.photo_url !== "-" && room.photo_url !== "") {
+        if (room.photo_url.startsWith("[")) {
+          try { photoArray = JSON.parse(room.photo_url); } catch(e) { photoArray = [room.photo_url]; }
+        } else {
+          photoArray = [room.photo_url];
+        }
       }
-      temporaryUploadedPhotos = rawUrl ? [rawUrl] : [];
+
+      // Konversi seluruh elemen array menjadi link stream googleusercontent (lh3) agar preview edit tidak pecah
+      temporaryUploadedPhotos = photoArray.map(url => getDirectMaintImgUrl(url));
       renderMaintenancePhotosPreview();
       
       document.getElementById("edit-maintenance-modal").classList.remove("hidden");
@@ -3551,6 +3714,9 @@
       if (currentLightboxMode === "maint") {
         if (type === 'camera') document.getElementById("maint-camera-input").click();
         else document.getElementById("maint-gallery-input").click();
+      } else if (currentLightboxMode === "maint_after") {
+        if (type === 'camera') document.getElementById("maint-after-camera-input").click();
+        else document.getElementById("maint-after-gallery-input").click();
       } else {
         if (type === 'camera') document.getElementById("asset-camera-input").click();
         else document.getElementById("asset-gallery-input").click();
@@ -3560,17 +3726,31 @@
     function openMaintUploadChoiceModal() { currentLightboxMode = "maint"; openUploadChoiceModal(); }
     function openAssetUploadChoiceModal() { currentLightboxMode = "asset"; openUploadChoiceModal(); }
 
-    function previewMaintenancePhotos(event) {
+    // ✅ PERBAIKAN MUTLAK: Mengunci Memory Foto Sebelumnya Agar Tidak Terhapus Saat Upload Ulang Secara Bertahap
+    async function previewMaintenancePhotos(event) {
       const files = event.target.files;
-      if (!files) return;
-      for (let i = 0; i < files.length; i++) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          temporaryUploadedPhotos.push(e.target.result);
-          renderMaintenancePhotosPreview();
-        };
-        reader.readAsDataURL(files[i]);
-      }
+      if (!files || files.length === 0) return;
+      
+      showToast("Memproses konversi biner gambar...", "info");
+      
+      // Bungkus proses pembacaan file FileReader ke dalam struktur Promise
+      const readAsBase64 = (file) => {
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target.result);
+          reader.readAsDataURL(file);
+        });
+      };
+      
+      // Jalankan parsing sekuensial paralel
+      const base64Results = await Promise.all(Array.from(files).map(file => readAsBase64(file)));
+      
+      // Gabungkan hasil foto baru tanpa melenyapkan isi temporaryUploadedPhotos yang sudah ada sebelumnya
+      temporaryUploadedPhotos = temporaryUploadedPhotos.concat(base64Results);
+      renderMaintenancePhotosPreview();
+      
+      // Reset input element agar file yang sama bisa dipilih kembali jika dibutuhkan
+      event.target.value = "";
     }
 
     function renderMaintenancePhotosPreview() {
@@ -3582,9 +3762,14 @@
         div.className = "relative group h-16 w-full border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden bg-slate-50";
         const btnLeft = index > 0 ? `<button type="button" onclick="movePhotoLeft(${index}, event)" class="absolute left-1 top-1/2 -translate-y-1/2 bg-slate-900/60 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center z-10 opacity-0 group-hover:opacity-100 transition-opacity"><i class="fa-solid fa-arrow-left"></i></button>` : '';
         const btnRight = index < temporaryUploadedPhotos.length - 1 ? `<button type="button" onclick="movePhotoRight(${index}, event)" class="absolute right-1 top-1/2 -translate-y-1/2 bg-slate-900/60 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center z-10 opacity-0 group-hover:opacity-100 transition-opacity"><i class="fa-solid fa-arrow-right"></i></button>` : '';
+        
+        // SUNTIKAN PERBAIKAN: Menyediakan tombol silang penghapus data lokal & pemicu API log histori online
         div.innerHTML = `
           <img src="${src}" class="h-full w-full object-cover cursor-pointer" onclick="openCustomPhotoLightbox(${index})">
           ${index === 0 ? '<span class="absolute top-0 left-0 bg-indigo-600 text-white text-[7px] font-black px-1 rounded-br z-10 shadow-sm">COVER</span>' : ''}
+          <button type="button" onclick="removeTemporaryPhoto(${index}); event.stopPropagation();" class="absolute top-1 right-1 bg-rose-600 hover:bg-rose-700 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center transition-all shadow-md font-bold z-20" title="Hapus Foto">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
           ${btnLeft} ${btnRight}
         `;
         container.appendChild(div);
@@ -3613,8 +3798,52 @@
 
     function removeTemporaryPhoto(index) { 
       if (currentLightboxMode === "maint") {
+        const locId = document.getElementById("edit-maint-room-id").value;
+        let originalDriveUrl = "-";
+
+        // =========================================================================
+        // FIX AMMAN: AMBIL URL DRIVE ASLI LANGSUNG DARI DATABASE SEBELUM DI-SPLICE
+        // =========================================================================
+        const roomObj = mockLocations.find(l => String(l.location_id).trim() === String(locId).trim());
+        if (roomObj) {
+          let originalPhotosArray = [];
+          if (roomObj.photo_urls && Array.isArray(roomObj.photo_urls)) {
+            originalPhotosArray = roomObj.photo_urls;
+          } else if (roomObj.photo_url && roomObj.photo_url !== "-" && roomObj.photo_url !== "") {
+            if (roomObj.photo_url.startsWith("[")) {
+              try { originalPhotosArray = JSON.parse(roomObj.photo_url); } catch(e) {}
+            } else {
+              originalPhotosArray = [roomObj.photo_url];
+            }
+          }
+          
+          // Ambil URL Google Drive asli berdasarkan indeks foto yang sedang dihapus
+          if (originalPhotosArray[index]) {
+            originalDriveUrl = originalPhotosArray[index];
+            
+            // Standardisasi jika link memuat format kustom googleusercontent agar dikembalikan ke drive.google
+            if (originalDriveUrl.includes("googleusercontent.com/profile/picture/")) {
+              const matchId = originalDriveUrl.match(/googleusercontent\.com\/profile\/picture\/\d(.+)/);
+              if (matchId && matchId[1]) {
+                originalDriveUrl = "https://drive.google.com/file/d/" + matchId[1] + "/view?usp=drivesdk";
+              }
+            }
+          }
+        }
+        // =========================================================================
+
+        // Masukkan URL Google Drive asli tersebut ke dalam antrean hapus
+        if (originalDriveUrl !== "-") {
+          temporaryDeletedPhotos.push(originalDriveUrl);
+        }
+
+        // Hapus data dari tampilan draf lokal frontend
         temporaryUploadedPhotos.splice(index, 1); 
         renderMaintenancePhotosPreview(); 
+        showToast("Foto dihapus dari draf antrean (Log akan disimpan saat Save Changes).", "info");
+        
+        // Naikkan hitungan berkas foto yang dihapus untuk dikirim saat formulir disave
+        photosDeletedLogCount++;
       } else {
         temporaryAssetPhotos.splice(index, 1);
         renderAssetPhotosPreview();
@@ -5054,11 +5283,22 @@
         photo_base64_array: temporaryUploadedPhotos,
         status: document.getElementById("edit-maint-status") ? document.getElementById("edit-maint-status").value : "Maintenance",
         classification: document.getElementById("edit-maint-classification") ? document.getElementById("edit-maint-classification").value : "",
-        operator_name: currentUser ? currentUser.name : "System Admin"
+        operator_name: currentUser ? currentUser.name : "System Admin",
+        // TAMBAHAN: Kirim jumlah foto yang dihapus ke server beserta daftar URL-nya
+        delete_photo_log: photosDeletedLogCount > 0 ? `[LOG FOTO] Operator menghapus ${photosDeletedLogCount} buah lampiran dokumentasi foto pada tiket perbaikan.` : "",
+        deleted_urls_array: temporaryDeletedPhotos // Mengirimkan array link foto yang dihapus
       };
+
+      // Reset state pelacak foto terhapus
+      photosDeletedLogCount = 0;
+      temporaryDeletedPhotos = [];
 
       closeEditMaintenanceModal();
       showToast("Syncing database records sequentially...", "info");
+
+      // ✅ STERILISASI FRONTEND: Kosongkan antrean input biner hardware perangkat agar tidak terjadi penumpukan cache loop data
+      document.getElementById("maint-camera-input").value = "";
+      document.getElementById("maint-gallery-input").value = "";
 
       // =======================================================================
       // KUNCI PERBAIKAN CASE 3 GLOBAL: Matikan flag & tutup modal detail kamar di belakang
@@ -5168,8 +5408,83 @@
         .catch(() => showToast("Upload transmission timeout", "danger"));
     }
 
+    // =========================================================================
+    // FITUR AKSES BARU: PENGHAPUSAN OPERASIONAL TIKET MAINTENANCE DARI MODAL
+    // =========================================================================
+    window.handleDeleteMaintenanceTicket = function() {
+      const locId = document.getElementById("edit-maint-room-id").value;
+      const roomName = document.getElementById("edit-maint-room-name").value;
+      
+      if (!locId || locId === "PENDING_NEW_ROOM") {
+        showToast("Tidak ada tiket pemeliharaan aktif yang dapat dihapus.", "warning");
+        return;
+      }
+
+      // Tutup sementara modal edit agar tidak tumpang tindih visual dengan dialog konfirmasi
+      document.getElementById("edit-maintenance-modal").classList.add("hidden");
+
+      // =========================================================================
+      // FIX VALIDASI: RE-CLONE TOMBOL OK UNTUK MEMUTUS SISA VALIDASI TANGGAL RESOLVE
+      // =========================================================================
+      const okBtn = document.getElementById("confirm-ok-btn");
+      if (okBtn) {
+        okBtn.classList.remove("hidden");
+        const cleanOkBtn = okBtn.cloneNode(true);
+        okBtn.parentNode.replaceChild(cleanOkBtn, okBtn);
+        
+        // Pasang ulang trigger dasar bawaan dialog kustom
+        cleanOkBtn.addEventListener("click", function() {
+          if (activeConfirmCallback) activeConfirmCallback();
+          document.getElementById("confirm-modal").classList.add("hidden");
+        });
+      }
+      // =========================================================================
+
+      openCustomConfirm(
+        "Delete Maintenance Ticket",
+        `Apakah Anda yakin ingin menghapus tiket pemeliharaan untuk <b>${roomName}</b>? Kamar akan dikembalikan murni berstatus <b>Ready</b> dan log perbaikan ini akan dicatat sebagai pembatalan tiket.`,
+        () => {
+          showToast("Memproses pembatalan tiket di Google Sheets...", "info");
+
+          const payload = {
+            action: "delete_maintenance_ticket", // Pemicu action kustom baru di backend GAS Anda
+            location_id: locId,
+            remarks: "Tiket Pemeliharaan Dibatalkan / Dihapus oleh Operator.",
+            operator_name: currentUser ? currentUser.name : "System Admin"
+          };
+
+          fetch(API_URL, { method: "POST", body: JSON.stringify(payload) })
+            .then(res => res.json())
+            .then(data => {
+              if (data.success) {
+                showToast("Tiket perbaikan berhasil dihapus dan kamar kembali Ready!", "success");
+                loadDatabaseState(); // Segarkan denah kamar murni 1 detik ke depan
+              } else {
+                showToast("Server Error: " + data.message, "danger");
+                // Buka kembali modal jika transaksi cloud gagal
+                openEditMaintenanceModal(locId);
+              }
+            })
+            .catch(() => {
+              showToast("Gagal terhubung dengan server transmisi database.", "danger");
+              openEditMaintenanceModal(locId);
+            });
+        }
+      );
+
+      // JIKA USER MEMBATALKAN KONFIRMASI (KLIK CANCEL), KEMBALIKAN MODAL EDIT MAINTENANCE KE DEPAN LAYAR
+      const cancelBtn = document.getElementById("confirm-cancel-btn");
+      if (cancelBtn) {
+        cancelBtn.onclick = function() {
+          document.getElementById("confirm-modal").classList.add("hidden");
+          document.getElementById("edit-maintenance-modal").classList.remove("hidden");
+          cancelBtn.onclick = function() { document.getElementById("confirm-modal").classList.add("hidden"); }; // Sterilkan kembali
+        };
+      }
+    };
+
     // Variabel penampung memory base64 foto sesudah perbaikan secara mandiri
-    let temporaryPhotoAfterBase64 = "";
+    let temporaryPhotoAfterBase64Array = [];
 
     function resolveRoomRepair(locId) {
       const room = mockLocations.find(l => l.location_id === locId);
@@ -5177,6 +5492,11 @@
       
       // Ambil tanggal hari ini sewaktu admin mengklik tombol sebagai isian bawaan yang valid
       const today = new Date().toISOString().split('T')[0];
+
+      // =========================================================================
+      // BERSIHKAN REKORD MEMORI ARRAY SETIAP KALI MODAL DIALOG BARU DIBUKA (ANTI-BUG)
+      // =========================================================================
+      temporaryPhotoAfterBase64Array = [];
 
       // Susun elemen suntikan HTML Form di dalam modal konfirmasi teratas
       const formHtml = `
@@ -5195,13 +5515,12 @@
 
           <div>
             <label class="block font-bold text-slate-500 mb-1">Foto Kondisi Setelah Perbaikan *</label>
-            <div onclick="document.getElementById('maint-after-file-clicker').click()" class="w-full h-16 border-2 border-slate-300 border-dashed rounded-lg bg-slate-50 hover:bg-slate-100 flex flex-col items-center justify-center cursor-pointer text-slate-400 transition-all">
-              <i class="fa-solid fa-camera text-base mb-0.5"></i>
-              <span class="text-[10px] font-medium" id="lbl-after-upload-status">Klik untuk Ambil Kamera / Galeri</span>
+            <div onclick="openMaintAfterUploadChoiceModal()" class="w-full h-16 border-2 border-slate-300 border-dashed rounded-lg bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-800 flex flex-col items-center justify-center cursor-pointer text-slate-400 transition-all">
+              <i class="fa-solid fa-camera text-slate-400 text-lg mb-1"></i>
+              <p class="text-[10px] text-slate-500 dark:text-slate-400"><span class="font-bold text-indigo-600">Tap to Upload</span> or Open Camera</p>
             </div>
-            <input type="file" id="maint-after-file-clicker" accept="image/*" class="hidden" onchange="processMaintAfterImage(event)">
           </div>
-          <div id="maint-after-preview-box" class="h-16 w-24 rounded-lg bg-slate-100 overflow-hidden border border-slate-200 hidden mt-1"></div>
+          <div id="maint-after-preview-box" class="grid grid-cols-4 gap-2 mt-2"></div>
         </div>
       `;
 
@@ -5211,12 +5530,8 @@
         okBtn.classList.remove("hidden");
       }
 
-      // Bersihkan memory base64 lama setiap kali form resolve baru dibuka agar steril
-      temporaryPhotoAfterBase64 = "";
-
-      // Buka custom confirm modal
+      // Buka custom confirm modal secara langsung tanpa terhambat validasi awal
       openCustomConfirm("⚙️ SELESAIKAN PEMELIHARAAN KAMAR", formHtml, () => {
-        // SUNTIKAN PERBAIKAN: Fungsi ini sekarang murni hanya mengeksekusi pengiriman data jika lolos validasi luar!
         const actualDate = document.getElementById("maint-actual-date").value;
         const actualRemarks = document.getElementById("maint-actual-remarks") ? document.getElementById("maint-actual-remarks").value.trim() : "";
 
@@ -5230,7 +5545,7 @@
           location_id: locId,
           maintenance_id: activeMaintId,
           actual_completion_date: actualDate,
-          photo_after_base64: temporaryPhotoAfterBase64,
+          photo_after_base64_array: temporaryPhotoAfterBase64Array,
           remarks: actualRemarks, 
           operator_name: currentUser ? currentUser.name : "System Admin"
         };
@@ -5240,7 +5555,7 @@
           .then(data => {
             if (data.success) {
               showToast(data.message, "success");
-              temporaryPhotoAfterBase64 = ""; 
+              temporaryPhotoAfterBase64Array = []; 
               loadDatabaseState(); 
             } else {
               showToast("Server Error: " + data.message, "danger");
@@ -5250,10 +5565,9 @@
       });
 
       // =========================================================================
-      // INTERSEPTOR STRUKTUR UTAMA: MENCEGAH TOMBOL OK MENUTUP MODAL JIKA BELUM VALID
+      // INTERSEPTOR STRUKTUR UTAMA: VALIDASI BERJALAN SAAT TOMBOL DIKLIK DI DALAM MODAL
       // =========================================================================
       if (okBtn) {
-        // Kita kloning tombol atau timpa event handler-nya murni agar tidak bentrok dengan listener global
         const newOkBtn = okBtn.cloneNode(true);
         okBtn.parentNode.replaceChild(newOkBtn, okBtn);
 
@@ -5261,7 +5575,6 @@
           const actualDate = document.getElementById("maint-actual-date") ? document.getElementById("maint-actual-date").value : "";
           const actualRemarks = document.getElementById("maint-actual-remarks") ? document.getElementById("maint-actual-remarks").value.trim() : "";
           
-          // Validasi Ketat: Jika kosong, berikan peringatan dan JANGAN TUTUP MODAL (return)
           if (!actualDate) {
             showToast("Tanggal selesai aktual wajib diisi!", "danger");
             return; 
@@ -5270,40 +5583,73 @@
             showToast("Remarks / Catatan penyelesaian wajib diisi!", "danger");
             return; 
           }
-          if (!temporaryPhotoAfterBase64 || temporaryPhotoAfterBase64 === "") {
-            showToast("Foto bukti setelah perbaikan wajib diunggah!", "danger");
+          
+          // VALIDASI LUAR AKAN DIPICU DI SINI SETELAH USER SELESAI MEMILIH FOTO
+          if (!temporaryPhotoAfterBase64Array || temporaryPhotoAfterBase64Array.length === 0) {
+            showToast("Foto bukti setelah perbaikan wajib diunggah minimal 1 foto!", "danger");
             return; 
           }
 
-          // Jika validasi lolos, jalankan callback kirim data dan tutup modalnya secara manual
           if (activeConfirmCallback) activeConfirmCallback();
           document.getElementById("confirm-modal").classList.add("hidden");
         });
       }
     }
 
-    // Fungsi bantu membaca file gambar setelah perbaikan dan mengubahnya menjadi base64 string
-    window.processMaintAfterImage = function(event) {
-      const file = event.target.files[0];
-      if (!file) return;
+    // Pemicu modal pilihan kamera/galeri untuk Resolved Maintenance
+    window.openMaintAfterUploadChoiceModal = function() {
+      currentLightboxMode = "maint_after";
+      openUploadChoiceModal();
+    };
 
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        temporaryPhotoAfterBase64 = e.target.result;
-        
-        const preview = document.getElementById("maint-after-preview-box");
-        const label = document.getElementById("lbl-after-upload-status");
-        
-        if (preview) {
-          preview.innerHTML = `<img src="${temporaryPhotoAfterBase64}" class="w-full h-full object-cover">`;
-          preview.classList.remove("hidden");
-        }
-        if (label) {
-          label.textContent = "Foto Berhasil Dimuat ✓";
-          label.className = "text-[10px] font-bold text-emerald-600";
-        }
+    // Fungsi membaca biner foto after secara bertahap tanpa menimpa data awal
+    window.previewMaintAfterPhotos = async function(event) {
+      const files = event.target.files;
+      if (!files || files.length === 0) return;
+      
+      showToast("Memproses konversi biner gambar setelah perbaikan...", "info");
+      
+      const readAsBase64 = (file) => {
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target.result);
+          reader.readAsDataURL(file);
+        });
       };
-      reader.readAsDataURL(file);
+      
+      const base64Results = await Promise.all(Array.from(files).map(file => readAsBase64(file)));
+      
+      // Menggabungkan foto baru ke array tanpa menghapus yang lama
+      temporaryPhotoAfterBase64Array = temporaryPhotoAfterBase64Array.concat(base64Results);
+      renderMaintAfterPhotosPreview();
+      
+      event.target.value = ""; // Reset kursor input cache
+    };
+
+    // Fungsi render pratinjau grid modern dilengkapi tombol delete fungsional yang estetis
+    window.renderMaintAfterPhotosPreview = function() {
+      const container = document.getElementById("maint-after-preview-box");
+      if (!container) return;
+      container.innerHTML = "";
+      
+      temporaryPhotoAfterBase64Array.forEach((src, index) => {
+        const div = document.createElement("div");
+        div.className = "relative group h-16 w-full border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden bg-slate-50 dark:bg-slate-950 shadow-sm animate-fade-in";
+        div.innerHTML = `
+          <img src="${src}" class="h-full w-full object-cover cursor-pointer" onclick="zoomImage('${src}', 'Visual Kondisi Setelah Perbaikan')">
+          <button type="button" onclick="removeMaintAfterPhoto(${index})" class="absolute top-1 right-1 bg-rose-600 hover:bg-rose-700 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center transition-all shadow-md font-bold" title="Hapus Foto">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        `;
+        container.appendChild(div);
+      });
+    };
+
+    // Fungsi hapus foto terarah berdasarkan indeks array
+    window.removeMaintAfterPhoto = function(index) {
+      temporaryPhotoAfterBase64Array.splice(index, 1);
+      renderMaintAfterPhotosPreview();
+      showToast("Foto berhasil dihapus dari daftar pratinjau.", "info");
     };
 
     // =========================================================================
@@ -5325,6 +5671,8 @@
         formEl.removeAttribute("data-deferred-classification");
       }
       temporaryUploadedPhotos = [];
+      photosDeletedLogCount = 0; // RESET jika user melakukan cancel/close modal
+      temporaryDeletedPhotos = []; // SUNTIKAN: Bersihkan cache draf link foto terhapus saat modal ditutup/cancel
       
       // 4. LOGIKA ARAH BALIK DINAMIS: Deteksi rute asal pembukaan modal pemeliharaan
       if (deferredMode === "add") {
@@ -5340,10 +5688,21 @@
     function toggleUserDropdown() { document.getElementById("user-dropdown").classList.toggle("hidden"); }
     function toggleTheme() { document.documentElement.classList.toggle("dark"); }
 
-    function zoomImage(url, caption) {
+    function zoomImage(url, caption, source = 'cover') {
       const modal = document.getElementById("lightbox-modal");
       const img = document.getElementById("lightbox-img");
       const bgcaption = document.getElementById("lightbox-caption");
+      
+      lightboxSource = source; // Catat asal klik foto
+      
+      // Matikan modal di belakang sementara agar visual fokus dan tidak bertumpukan ketat
+      if (source === 'detail') {
+        // Jika dari detail maintenance (yang menumpang di confirm-modal), sembunyikan confirm-modal
+        document.getElementById("confirm-modal").classList.add("hidden");
+      } else if (source === 'edit') {
+        document.getElementById("edit-maintenance-modal").classList.add("hidden");
+      }
+
       img.src = url;
       bgcaption.textContent = caption || "Breakdown Reference Visual";
       modal.classList.remove("hidden");
@@ -5351,6 +5710,15 @@
 
     function closeLightbox(event) {
       document.getElementById("lightbox-modal").classList.add("hidden");
+      
+      // KEMBALIKAN ALUR NAVIGASI SECARA BERJENJANG MENGIKUTI SOURCE ASALNYA
+      if (lightboxSource === 'detail') {
+        document.getElementById("confirm-modal").classList.remove("hidden");
+      } else if (lightboxSource === 'edit') {
+        document.getElementById("edit-maintenance-modal").classList.remove("hidden");
+      }
+      // Jika dari 'cover', alur otomatis diam di halaman awal kartu tanpa memicu modal apa pun
+      lightboxSource = ""; // Sterilkan kembali
     }
 
     function renderHistoryLogs() {
@@ -5506,6 +5874,13 @@
         </div>
       `;
 
+      // ✅ PERBAIKAN: Memastikan tombol konfirmasi utama "Yes, Proceed" selalu dipaksa tampil dan teks di-reset normal
+      const globalConfirmOkBtn = document.getElementById("confirm-ok-btn");
+      if (globalConfirmOkBtn) {
+        globalConfirmOkBtn.classList.remove("hidden");
+        globalConfirmOkBtn.textContent = "Yes, Proceed";
+      }
+
       openCustomConfirm("📅 Extend Maintenance Duration", formHtml, () => {
         const newExtDate = document.getElementById("maint-extend-date").value;
         const extNotes = document.getElementById("maint-extend-notes").value;
@@ -5515,12 +5890,13 @@
 
         showToast("Mengirim berkas pengajuan extend ke Google Sheet...", "info");
 
+        // ✅ SINKRONISASI OBJEK: Mengubah tracker rujukan variabel ke 'room' huruf kecil agar parsing parameter lolos validasi
         const payload = {
           action: "extend_maintenance",
           location_id: locId,
           extended_completion_date: newExtDate,
           notes: extNotes,
-          // PERBAIKAN: Pastikan menggunakan properti .name (Nama Lengkap) secara presisi
+          classification: (room && room.classification) ? room.classification : "Ringan",
           operator_name: currentUser ? currentUser.name : "System Admin"
         };
 
@@ -5543,6 +5919,15 @@
       currentLightboxMode = document.getElementById("edit-asset-modal").classList.contains("hidden") ? "maint" : "asset";
       const src = (currentLightboxMode === "maint") ? temporaryUploadedPhotos[index] : temporaryAssetPhotos[index];
       if (!src) return;
+
+      // =========================================================================
+      // SET PARAMETER SUMBER EDIT DISINI AGAR ESC/X TAHU JALAN KEMBALI
+      // =========================================================================
+      if (currentLightboxMode === "maint") {
+        lightboxSource = "edit";
+        document.getElementById("edit-maintenance-modal").classList.add("hidden");
+      }
+      // =========================================================================
 
       const imgEl = document.getElementById("custom-lightbox-img");
       imgEl.src = src;
@@ -5577,6 +5962,25 @@
       });
     }
 
+    // =========================================================================
+    // SUNTIKAN BARU: Fungsi Penutup Draf Foto Guna Mengembalikan Modal Edit
+    // =========================================================================
+    window.closeCustomPhotoLightbox = function() {
+      document.getElementById("custom-photo-lightbox").classList.add("hidden");
+      
+      // Jika sumber klik berasal dari draf edit pemeliharaan, kembalikan modal editnya
+      if (lightboxSource === 'edit') {
+        document.getElementById("edit-maintenance-modal").classList.remove("hidden");
+      }
+      lightboxSource = ""; // Reset
+      
+      if (cameFromMaintDetail) {
+        cameFromMaintDetail = false;
+        document.getElementById("confirm-modal").classList.remove("hidden");
+      }
+    };
+    // =========================================================================
+    
     // INTERSEPTOR PEMBACA MULTI-FOTO SAAT EDIT ASSET STATUS
     const originalTriggerEditAsset = triggerEditAsset;
     triggerEditAsset = function(assetId, source = 'room-detail') {
@@ -5913,6 +6317,7 @@ document.addEventListener("keydown", function(event) {
     
     // PERBAIKAN: Masukkan leave-modal dan extend-modal ke dalam daftar penutupan prioritas ESC global
     const modalHierarchy = [
+      "lightbox-modal", // <--- SUNTIKAN BERHASIL: Masukkan lightbox-modal ke prioritas UTAMA lapisan paling depan
       "custom-photo-lightbox",
       "confirm-modal",
       "leave-modal",
@@ -5936,7 +6341,30 @@ document.addEventListener("keydown", function(event) {
     });
 
     if (activeModalId) {
+      // =========================================================================
+      // KUNCI CO-EXISTENCE: Hentikan rambatan event agar tidak memicu fungsi ganda di bawah
+      // =========================================================================
       event.preventDefault();
+      event.stopPropagation();
+      // =========================================================================
+      
+      // =========================================================================
+      // INTERSEPTOR ESC LIGHTBOX DETAIL: Panggil fungsi closeLightbox() bawaan sistem agar ter-restore
+      // =========================================================================
+      if (activeModalId === "lightbox-modal") {
+        closeLightbox();
+        return;
+      }
+      // =========================================================================
+      
+      // =========================================================================
+      // SUNTIKKAN BARU: INTERSEPTOR ESC LIGHTBOX DRAF EDIT: Panggil fungsi closeCustomPhotoLightbox()
+      // =========================================================================
+      if (activeModalId === "custom-photo-lightbox") {
+        closeCustomPhotoLightbox();
+        return;
+      }
+      // =========================================================================
       
       // PERBAIKAN: Jika pengguna menekan ESC saat modal leave aktif, panggil fungsi pengaliran balik berjenjang
       if (activeModalId === "leave-modal") {
@@ -6147,20 +6575,6 @@ window.onload = function() {
     }
   }, 1000); // 1000 milidetik = 1 Detik murni
 };
-
-// 🔽 TARO KODE PEMICU ESC KEYBOARD TEPAT DI SINI (DI LUAR WINDOW.ONLOAD) 🔽
-window.addEventListener('keydown', function (event) {
-  if (event.key === 'Escape' || event.key === 'Esc') {
-    const maintModal = document.getElementById("edit-maintenance-modal");
-    // Jika modal edit-maintenance sedang terbuka di layar, batalkan event bawaan dan eksekusi alur kembali
-    if (maintModal && !maintModal.classList.contains("hidden")) {
-      event.preventDefault();
-      closeEditMaintenanceModal();
-    }
-  }
-});
-// 🔼 =================================================================== 🔼
-
   </script>
 </body>
 </html>
