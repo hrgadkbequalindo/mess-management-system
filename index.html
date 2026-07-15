@@ -1818,7 +1818,7 @@
     // =========================================================================
     // SUNTIKAN ENDPOINT URL API UNTUK SINKRONISASI GO-LIVE GOOGLE SHEETS
     // =========================================================================
-    const API_URL = "https://script.google.com/macros/s/AKfycbzYPP6YXk52GspXv3fnh_nqjaz88Dqs_pk87_q7HZTtsrK6cDTW_a4RU6OixW_LkYRx/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbyU0GgW_L-zstmgom-Ni4eDczAV_1HWpnmyMat5rt1atho4UQVh6XmUBYPLp25ebMs/exec";
 
     // ✅ FUNGSI HELPER MUTLAK: Mengonversi Tautan Google Drive Menjadi Direct Hotlink Gambar Mentah Anti-CORS
     function getDirectMaintImgUrl(rawUrl) {
@@ -1857,26 +1857,6 @@
       }
       return targetUrl;
     }
-
-    // =========================================================================
-    // PERBAIKAN POIN 3: MENYELARASKAN DATA KUNCI AKUN MENJADI HURUF KECIL (LOWERCASE)
-    // =========================================================================
-    // PERBAIKAN PERMANEN: Menyimpan bank data akun kustom terupdate (Akun Demo Dihapus Total)
-    if (!localStorage.getItem("amms_users_db")) {
-      const defaultUsers = {
-        "asun": { name: "Aditya Heriyanto", role: "Super Admin", pass: "luffy114" },
-        "doni": { name: "Dhonny Wichaksono", role: "Super Admin", pass: "doni123" },
-        "jason": { name: "Jason Andrew Moniaga", role: "Admin", pass: "jason123" },
-        "ester": { name: "Ester Sry Damayanti Sitompul", role: "Admin", pass: "ester123" },
-        "alprita": { name: "Alprita Langi Masirrin", role: "Admin", pass: "alprita123" },
-        "sherli": { name: "Sherli Shafani", role: "Admin", pass: "sherli123" },
-        "demo": { name: "Demo Live", role: "Admin", pass: "demo123" } // <--- SUNTIKAN BERHASIL: Akun Admin Demo Terdaftar!
-      };
-      localStorage.setItem("amms_users_db", JSON.stringify(defaultUsers));
-    }
-    
-    // Ambil data users ter-update dari storage penjelajah
-    const MOCK_USERS = JSON.parse(localStorage.getItem("amms_users_db"));
 
     let currentUser = JSON.parse(localStorage.getItem("amms_current_user")) || null;
     // DATABASE SIMULASI STATUS PENGEMBANGAN MODUL (LANGKAH 1)
@@ -2110,31 +2090,55 @@
       document.getElementById("settings-modal").classList.toggle("hidden", !show);
     }
 
+    // =========================================================================
+    // PRODUCTION SECURE SERVER-SIDE PASSWORD MODIFICATION ROUTINE
+    // =========================================================================
     function handlePasswordChange(event) {
       event.preventDefault();
+      
+      if (!currentUser || !currentUser.username) {
+        showToast("Sesi tidak valid, silakan login ulang.", "danger");
+        return;
+      }
+
       const curr = document.getElementById("settings-curr-pass").value;
       const npass = document.getElementById("settings-new-pass").value;
       const cpass = document.getElementById("settings-conf-pass").value;
 
-      // 1. VALIDASI: Pastikan password lama yang diinput sesuai dengan data di database akun saat ini
-      if (!currentUser || MOCK_USERS[currentUser.username].pass !== curr) {
-        showToast("Current password is incorrect!", "danger");
-        return;
-      }
-
-      // 2. VALIDASI: Cek kecocokan password baru dan konfirmasi
+      // VALIDASI LOKAL: Cek kecocokan password baru dan konfirmasi
       if (npass !== cpass) {
         showToast("New passwords do not match!", "danger");
         return;
       }
 
-      // 3. EKSEKUSI PERMANEN: Perbarui data password pada global memory LocalStorage
-      MOCK_USERS[currentUser.username].pass = npass;
-      localStorage.setItem("amms_users_db", JSON.stringify(MOCK_USERS));
+      showToast("Mengirim permintaan perubahan password ke server...", "info");
 
-      showToast("Password successfully changed permanently!", "success");
-      toggleSettingsModal(false);
-      document.getElementById("settings-password-form").reset();
+      const payload = {
+        action: "change_password",
+        username: currentUser.username,
+        current_password: curr,
+        new_password: npass
+      };
+
+      // Transmisi aman tanpa kebocoran data di sisi browser operator
+      fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify(payload)
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            showToast(data.message, "success");
+            toggleSettingsModal(false);
+            document.getElementById("settings-password-form").reset();
+          } else {
+            showToast(data.message, "danger");
+          }
+        })
+        .catch(err => {
+          console.error("Password modification failed:", err);
+          showToast("Gagal terhubung dengan server autentikasi.", "danger");
+        });
     }
 
     // =========================================================================
@@ -2586,9 +2590,10 @@
         if (!matchesFloor || !matchesSubBlock) return;
 
         countAll++;
-        const occupants = mockOccupants.filter(o => o.location_id === loc.location_id && (o.status === "Active" || o.status === "Reserve" || o.status === "Reserved"));
-        // PERBAIKAN: Selama status utama dari Sheets bernilai "Active", kasur tetap dihitung occupied (terisi)
-        const activeOnsiteCount = occupants.filter(o => o.status === "Active").length;
+        // PERBAIKAN MUTAKHIR: Ambil semua occupant yang berstatus Active, Reserve, Reserved, maupun yang sedang Leave
+        const occupants = mockOccupants.filter(o => o.location_id === loc.location_id && (o.status === "Active" || o.status === "Reserve" || o.status === "Reserved" || String(o.status).toLowerCase() === "leave"));
+        // Hitung kasur terisi jika statusnya Active, Leave, atau bendera is_on_leave aktif (Mencakup leave saat ini & leave akan datang)
+        const activeOnsiteCount = occupants.filter(o => o.status === "Active" || String(o.status).toLowerCase() === "leave" || o.is_on_leave === true || o.is_on_leave === "TRUE").length;
         const capacity = parseInt(loc.capacity || 4);
         
         if (loc.status === "Broken") countBroken++;
@@ -2614,21 +2619,35 @@
 
       mockLocations.forEach(loc => {
         const cap = parseInt(loc.capacity || 4);
-        const occupants = mockOccupants.filter(o => o.location_id === loc.location_id && (o.status === "Active" || o.status === "Reserve" || o.status === "Reserved"));
-        const activeCount = occupants.filter(o => o.status === "Active" && !o.is_on_leave).length;
+        // PERBAIKAN SINKRONISASI AREA: Tangkap string "active", "reserve", "reserved", "leave", maupun "on leave" secara lowercase murni
+        const occupants = mockOccupants.filter(o => {
+          const s = String(o.status || "").toLowerCase();
+          return o.location_id === loc.location_id && (s === "active" || s === "reserve" || s === "reserved" || s === "leave" || s === "on leave");
+        });
+        
+        // Ambil jumlah staff yang menduduki kasur (Active atau sedang Leave/On Leave atau memiliki bendera TRUE)
+        const activeCount = occupants.filter(o => {
+          const s = String(o.status || "").toLowerCase();
+          return s === "active" || s === "leave" || s === "on leave" || o.is_on_leave === true || o.is_on_leave === "TRUE";
+        }).length;
+        
         if (loc.floor === "Mess Nusantara") { nusTotal += cap; nusOccupied += activeCount; }
         else if (loc.floor === "Mess Khatulistiwa") { khaTotal += cap; khaOccupied += activeCount; }
       });
 
+      // Menembak nilai murni ke layar UI berdasarkan penyesuaian regulasi kasur staff cuti/on leave
       if(document.getElementById("nusantara-total-beds")) document.getElementById("nusantara-total-beds").textContent = nusTotal;
       if(document.getElementById("nusantara-occupied-beds")) document.getElementById("nusantara-occupied-beds").textContent = nusOccupied;
       if(document.getElementById("nusantara-available-beds")) document.getElementById("nusantara-available-beds").textContent = Math.max(0, nusTotal - nusOccupied);
+      
       if(document.getElementById("khatulistiwa-total-beds")) document.getElementById("khatulistiwa-total-beds").textContent = khaTotal;
       if(document.getElementById("khatulistiwa-occupied-beds")) document.getElementById("khatulistiwa-occupied-beds").textContent = khaOccupied;
       if(document.getElementById("khatulistiwa-available-beds")) document.getElementById("khatulistiwa-available-beds").textContent = Math.max(0, khaTotal - khaOccupied);
 
+      // Gabungkan total akumulasi global ke panel summary card paling kiri (Summary All Mess Status)
       const combinedTotal = nusTotal + khaTotal;
       const combinedOccupied = nusOccupied + khaOccupied;
+      
       if(document.getElementById("overall-total-beds")) document.getElementById("overall-total-beds").textContent = combinedTotal;
       if(document.getElementById("overall-occupied-beds")) document.getElementById("overall-occupied-beds").textContent = combinedOccupied;
       if(document.getElementById("overall-available-beds")) document.getElementById("overall-available-beds").textContent = Math.max(0, combinedTotal - combinedOccupied);
@@ -2673,8 +2692,8 @@
         }
 
         const occupants = mockOccupants.filter(o => o.location_id === loc.location_id && o.status !== "Checked-Out" && o.status !== "");
-        // PERBAIKAN: Hitung murni status "Active" dari sheet Occupants tanpa dikurangi bendera is_on_leave
-        const activeOnsiteCount = occupants.filter(o => o.status === "Active").length;
+        // PERBAIKAN MUTAKHIR: Kasur tetap dihitung terisi bagi yang statusnya Active, Leave, atau memiliki bendera cuti aktif
+        const activeOnsiteCount = occupants.filter(o => o.status === "Active" || String(o.status).toLowerCase() === "leave" || o.is_on_leave === true || o.is_on_leave === "TRUE").length;
         const capacity = parseInt(loc.capacity || 4);
         
         let dynamicStatus = loc.status;
@@ -2812,7 +2831,8 @@
   function createSingleCardElement(loc) {
     const capacity = parseInt(loc.capacity || 4);
     const occupants = mockOccupants.filter(o => o.location_id === loc.location_id && o.status !== "Checked-Out" && o.status !== "");
-    const activeOnsiteCount = occupants.filter(o => o.status === "Active").length;
+    // PERBAIKAN MUTAKHIR: Progress bar kuota huni ungu di kartu bawah tidak akan berkurang/drop saat occupant set leave
+    const activeOnsiteCount = occupants.filter(o => o.status === "Active" || String(o.status).toLowerCase() === "leave" || o.is_on_leave === true || o.is_on_leave === "TRUE").length;
 
     let resolvedStatus = loc.status;
     if (loc.status === "Ready" && activeOnsiteCount >= capacity) resolvedStatus = "Full";
@@ -4877,8 +4897,8 @@
       document.getElementById("chart-lbl-broken").textContent = mockAssets.filter(a => a.status === "Broken").length;
 
       let totalBeds = 0; mockLocations.forEach(l => totalBeds += parseInt(l.capacity));
-      // PERBAIKAN: Hitung murni status "Active" agar sinkron dengan baris kartu huni
-      const occupiedBeds = mockOccupants.filter(o => o.status === "Active").length;
+      // PERBAIKAN MUTAKHIR: Angka keterisian kasur di donut chart dashboard ikut menghitung occupant yang leave/is_on_leave
+      const occupiedBeds = mockOccupants.filter(o => o.status === "Active" || String(o.status).toLowerCase() === "leave" || o.is_on_leave === true || o.is_on_leave === "TRUE").length;
       const emptyBeds = totalBeds - occupiedBeds;
       const pct = totalBeds > 0 ? Math.round((occupiedBeds / totalBeds) * 100) : 0;
       document.getElementById("chart-donut-pct").textContent = pct + "%";
@@ -6123,7 +6143,7 @@ function checkAuthEnforcer() {
 }
 
 // =========================================================================
-// PERBAIKAN TOTAL LOGIKA LOGIN SUBMIT USERNAME AGAR TIDAK MACET KETIKA DIKLIK
+// PRODUCTION REST API AUTHENTICATION CLIENT (SECURE FROM INSPECT ELEMENT)
 // =========================================================================
 function handleLoginSubmit(event) {
   event.preventDefault();
@@ -6136,28 +6156,41 @@ function handleLoginSubmit(event) {
   const username = usernameInput.value.trim().toLowerCase();
   const pass = passwordInput.value;
   
-  // Validasi pencocokan murni ke object database simulasi MOCK_USERS
-  if (MOCK_USERS[username] && MOCK_USERS[username].pass === pass) {
-    currentUser = { 
-      username: username, 
-      name: MOCK_USERS[username].name, 
-      role: MOCK_USERS[username].role 
-    };
-    
-    localStorage.setItem("amms_current_user", JSON.stringify(currentUser));
-    
-    // =========================================================================
-    // SUNTIKAN MODIFIKASI: SIMPAN FLAG PENANDA NOTIFIKASI SUKSES LOGIN BESERTA NAMA
-    // =========================================================================
-    localStorage.setItem("login_success_toast", "true");
-    // =========================================================================
+  showToast("Verifying credentials with server...", "info");
+  
+  const payload = {
+    action: "user_login",
+    username: username,
+    password: pass
+  };
 
-    // Sembunyikan layar login dan muat ulang halaman dengan status sesi baru
-    document.getElementById("login-screen").classList.add("hidden");
-    window.location.reload();
-  } else {
-    showToast("Oops! That username or password didn't match. Please try again", "danger");
-  }
+  // Kirim jabat tangan data ke backend GAS secara terenkripsi jaringan HTTPS
+  fetch(API_URL, {
+    method: "POST",
+    body: JSON.stringify(payload)
+  })
+    .then(res => {
+      if (!res.ok) throw new Error("HTTP error, status = " + res.status);
+      return res.json();
+    })
+    .then(data => {
+      if (data.success) {
+        currentUser = data.user;
+        // Menyimpan amms_current_user berisi {username, name, role} ke localStorage
+        localStorage.setItem("amms_current_user", JSON.stringify(currentUser));
+        localStorage.setItem("login_success_toast", "true");
+        
+        // Sembunyikan layar login secara bersih dan muat ulang halaman dengan status sesi yang sah
+        document.getElementById("login-screen").classList.add("hidden");
+        window.location.reload();
+      } else {
+        showToast(data.message, "danger");
+      }
+    })
+    .catch(err => {
+      console.error("Auth server connection failed:", err);
+      showToast("Authentication transmission timeout or network offline.", "danger");
+    });
 }
 
 function handleSignOut() {
