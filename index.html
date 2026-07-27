@@ -1451,14 +1451,24 @@
               </div>
             </div>
 
-            <!-- BARIS 1: FILTER STATUS GLOBAL -->
-            <div class="flex items-center gap-1.5 text-[10px] font-bold select-none flex-wrap">
-              <span class="text-slate-400 font-semibold mr-1 w-20 block">Status :</span>
-              <button type="button" onclick="setRoomStatusFilterGlobal('All')" id="flt-room-status-All" class="px-2.5 py-1 rounded bg-indigo-600 text-white border border-indigo-500 shadow-sm transition-colors">All</button>
-              <button type="button" onclick="setRoomStatusFilterGlobal('Ready')" id="flt-room-status-Ready" class="px-2.5 py-1 rounded bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 transition-colors">Ready</button>
-              <button type="button" onclick="setRoomStatusFilterGlobal('Full')" id="flt-room-status-Full" class="px-2.5 py-1 rounded bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 transition-colors">Full</button>
-              <button type="button" onclick="setRoomStatusFilterGlobal('Maintenance')" id="flt-room-status-Maintenance" class="px-2.5 py-1 rounded bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 transition-colors">Maintenance</button>
-              <button type="button" onclick="setRoomStatusFilterGlobal('Broken')" id="flt-room-status-Broken" class="px-2.5 py-1 rounded bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 transition-colors">Broken</button>
+            <div class="flex justify-between items-center flex-wrap gap-4 text-[10px] font-bold select-none w-full mt-2">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="text-slate-400 font-semibold mr-1 w-20 block">Status :</span>
+                <button type="button" onclick="setRoomStatusFilterGlobal('All')" id="flt-room-status-All" class="px-2.5 py-1 rounded bg-indigo-600 text-white border border-indigo-500 shadow-sm transition-colors">All</button>
+                <button type="button" onclick="setRoomStatusFilterGlobal('Ready')" id="flt-room-status-Ready" class="px-2.5 py-1 rounded bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 transition-colors">Ready</button>
+                <button type="button" onclick="setRoomStatusFilterGlobal('Full')" id="flt-room-status-Full" class="px-2.5 py-1 rounded bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 transition-colors">Full</button>
+                <button type="button" onclick="setRoomStatusFilterGlobal('Maintenance')" id="flt-room-status-Maintenance" class="px-2.5 py-1 rounded bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 transition-colors">Maintenance</button>
+                <button type="button" onclick="setRoomStatusFilterGlobal('Broken')" id="flt-room-status-Broken" class="px-2.5 py-1 rounded bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 transition-colors">Broken</button>
+              </div>
+
+              <div class="flex items-center gap-2 shrink-0">
+                <button type="button" onclick="showCollectiveStaffModal('leave')" class="px-2.5 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 font-black rounded-lg flex items-center gap-1 border border-amber-500/20 transition-all">
+                  <i class="fa-solid fa-plane-departure"></i> Lihat Staff Cuti / Leave
+                </button>
+                <button type="button" onclick="showCollectiveStaffModal('onduty')" class="px-2.5 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-black rounded-lg flex items-center gap-1 border border-emerald-500/20 transition-all">
+                  <i class="fa-solid fa-briefcase"></i> Lihat Staff On Duty
+                </button>
+              </div>
             </div>
 
             <!-- BARIS 2: MESS AREA (GARIS BORDER-T DIHAPUS) -->
@@ -1471,13 +1481,11 @@
               </div>
             </div>
 
-            <!-- BARIS 3: FILTER SUB-BLOK AREA (GARIS BORDER-T DIHAPUS) -->
             <div id="sub-block-filter-wrapper" class="flex flex-wrap items-center gap-1.5 text-[10px] font-bold select-none pt-0.5 mt-0">
               <span class="text-slate-400 font-semibold mr-1 w-20 block">Sub-Blok Area:</span>
               <div id="sub-block-buttons-render" class="flex flex-wrap gap-1.5"></div>
             </div>
 
-            <!-- PERBAIKAN GRID: Dikunci Mati Menjadi Tepat grid-cols-5 (5 Kolom Kesamping) -->
             <div class="grid grid-cols-5 gap-3 bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-100 dark:border-slate-800" id="visual-map-plan"></div>
             
             <!-- KONTANER PAGINATION NUMBER (PAGE 1, PAGE 2, DST.) -->
@@ -5535,7 +5543,8 @@
           </div>
 
           <div>
-            <label class="block font-bold text-slate-500 mb-1">Foto Kondisi Setelah Perbaikan *</label>
+            <!-- 🟢 SESUDAH: Mengubah label menjadi (Opsional) -->
+            <label class="block font-bold text-slate-500 mb-1">Foto Kondisi Setelah Perbaikan (Opsional)</label>
             <div onclick="openMaintAfterUploadChoiceModal()" class="w-full h-16 border-2 border-slate-300 border-dashed rounded-lg bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-800 flex flex-col items-center justify-center cursor-pointer text-slate-400 transition-all">
               <i class="fa-solid fa-camera text-slate-400 text-lg mb-1"></i>
               <p class="text-[10px] text-slate-500 dark:text-slate-400"><span class="font-bold text-indigo-600">Tap to Upload</span> or Open Camera</p>
@@ -5605,11 +5614,8 @@
             return; 
           }
           
-          // VALIDASI LUAR AKAN DIPICU DI SINI SETELAH USER SELESAI MEMILIH FOTO
-          if (!temporaryPhotoAfterBase64Array || temporaryPhotoAfterBase64Array.length === 0) {
-            showToast("Foto bukti setelah perbaikan wajib diunggah minimal 1 foto!", "danger");
-            return; 
-          }
+          // 🟢 SESUDAH: Blok pengecekan foto telah DIHAPUS. 
+          // Form dapat langsung di-submit meskipun temporaryPhotoAfterBase64Array kosong.
 
           if (activeConfirmCallback) activeConfirmCallback();
           document.getElementById("confirm-modal").classList.add("hidden");
@@ -6447,6 +6453,13 @@ document.addEventListener("keydown", function(event) {
       else if (activeModalId === "confirm-modal") {
         event.preventDefault();
         
+        // AMANKAN UKURAN: Kembalikan boks confirm modal ke ukuran kecil semula saat ditutup via keyboard ESC
+        const modalBox = document.getElementById("confirm-modal").querySelector(".max-w-3xl");
+        if (modalBox) {
+          modalBox.classList.remove("max-w-3xl");
+          modalBox.classList.add("max-w-sm");
+        }
+        
         // Cek murni flag pelacak halaman
         if (typeof cameFromRoomDetail !== 'undefined' && cameFromRoomDetail) {
           // Jika true (dari Manage Room), picu tombol cancel kustom agar kembali ke modal detail
@@ -6536,6 +6549,199 @@ document.addEventListener("keydown", function(event) {
   }
 });
 // =========================================================================
+
+// =========================================================================
+// SUNTIKAN FITUR TELEMETRI: MODAL TABULAR KOLEKTIF STAFF LEAVE & ON DUTY (UPDATED WIDE & NOTICE H-2)
+// =========================================================================
+let currentCollectiveType = 'leave';
+let currentCollectiveSort = 'date_asc';
+
+function showCollectiveStaffModal(type, sortOption = 'date_asc') {
+  currentCollectiveType = type;
+  currentCollectiveSort = sortOption;
+  
+  // Deteksi penanggalan komputer lokal operator saat ini murni
+  const liveDate = new Date();
+  const systemTodayStr = `${liveDate.getFullYear()}-${String(liveDate.getMonth() + 1).padStart(2, '0')}-${String(liveDate.getDate()).padStart(2, '0')}`;
+  const todayMs = new Date(systemTodayStr).getTime();
+  
+  // 1. FILTER DATA BERDASARKAN ATURAN BISNIS MMS
+  let filteredList = mockOccupants.filter(o => o.status !== "Checked-Out" && o.status !== "");
+  
+  if (type === 'leave') {
+    filteredList = filteredList.filter(o => {
+      const s = String(o.status || "").toLowerCase();
+      return (s === "leave" || s === "on leave" || o.is_on_leave === true || o.is_on_leave === "TRUE");
+    });
+  } else {
+    filteredList = filteredList.filter(o => {
+      const s = String(o.status || "").toLowerCase();
+      return (s === "on duty" || o.type === "On Duty" || o.type === "Off-site Employees (On Duty)");
+    });
+  }
+
+  // Hitung total orang terdaftar hasil filter kategori
+  const totalStaffCount = filteredList.length;
+
+  // 2. ENGINE SORTING / PENYARINGAN URUTAN DATA
+  filteredList.sort((a, b) => {
+    if (sortOption === 'date_asc' || sortOption === 'date_desc') {
+      const dateA = type === 'leave' ? (a.leave_end_date || '9999-12-31') : (a.check_out_date || '9999-12-31');
+      const dateB = type === 'leave' ? (b.leave_end_date || '9999-12-31') : (b.check_out_date || '9999-12-31');
+      return sortOption === 'date_asc' ? dateA.localeCompare(dateB) : dateB.localeCompare(dateA);
+    } 
+    else if (sortOption === 'duration_desc' || sortOption === 'duration_asc') {
+      const getDuration = (occ) => {
+        const start = new Date(type === 'leave' ? (occ.leave_start_date || liveDate) : (occ.check_in_date || liveDate));
+        const end = new Date(type === 'leave' ? (occ.leave_end_date || liveDate) : (occ.check_out_date || liveDate));
+        return Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24)) || 0;
+      };
+      return sortOption === 'duration_desc' ? getDuration(b) - getDuration(a) : getDuration(a) - getDuration(b);
+    }
+    return 0;
+  });
+
+  // 3. GENERATE KARTU HEADER MODAL & ELEMEN SORT DROP-DOWN
+  let titleText = type === 'leave' ? 'Collective Log Staff Cuti / Leave' : 'Collective Log Staff On Duty';
+  let themeColor = type === 'leave' ? 'text-amber-600' : 'text-emerald-600';
+  
+  let html = `
+    <div class="space-y-4 text-xs text-slate-700 dark:text-slate-300 max-h-[70vh] overflow-y-auto pr-1">
+      <div class="flex items-center justify-between bg-slate-50 dark:bg-slate-950 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800">
+        <span class="font-bold text-slate-500">Urutkan Berdasarkan :</span>
+        <select onchange="showCollectiveStaffModal('${type}', this.value)" class="px-2 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md font-bold text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+          <option value="date_asc" ${sortOption === 'date_asc' ? 'selected' : ''}>${type === 'leave' ? 'Return Onsite (Terdekat)' : 'Est. Check-Out (Terdekat)'}</option>
+          <option value="date_desc" ${sortOption === 'date_desc' ? 'selected' : ''}>${type === 'leave' ? 'Return Onsite (Terjauh)' : 'Est. Check-Out (Terjauh)'}</option>
+          <option value="duration_desc" ${sortOption === 'duration_desc' ? 'selected' : ''}>Durasi Menginap (Tertinggi)</option>
+          <option value="duration_asc" ${sortOption === 'duration_asc' ? 'selected' : ''}>Durasi Menginap (Terendah)</option>
+        </select>
+      </div>
+      <div class="space-y-2">
+  `;
+
+  if (filteredList.length === 0) {
+    html += `<div class="text-center py-6 text-slate-400 font-bold italic border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">Tidak ada data records staff aktif untuk kategori ini.</div>`;
+  } else {
+    filteredList.forEach(occ => {
+      const locObj = mockLocations.find(l => l.location_id === occ.location_id);
+      const roomNameDisplay = locObj ? locObj.name : (occ.room_name || "Kamar-?");
+      
+      const startD = type === 'leave' ? occ.leave_start_date : occ.check_in_date;
+      const endD = type === 'leave' ? occ.leave_end_date : occ.check_out_date;
+      const durationDays = Math.ceil(Math.abs(new Date(endD) - new Date(startD)) / (1000 * 60 * 60 * 24)) || 1;
+
+      // =========================================================================
+      // CALCULATION ENGINE: LOGIKA ALARM REMINDER NOTICE H-2 (DUE DATE ESTIMATION)
+      // =========================================================================
+      let noticeHtml = "";
+      if (endD) {
+        const targetDateClean = endD.replace(/\//g, "-").split("T")[0];
+        const targetMs = new Date(targetDateClean).getTime();
+        
+        // Selisih dalam satuan hari murni
+        const daysRemaining = Math.ceil((targetMs - todayMs) / (1000 * 60 * 60 * 24));
+        
+        if (daysRemaining <= 2 && daysRemaining >= 0) {
+          const alarmText = type === 'leave' ? 'Selesai Leave / Kembali Onsite' : 'Selesai Masa Tugas On Duty';
+          noticeHtml = `
+            <div class="col-span-2 mt-1 px-3 py-2 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 rounded-lg text-[11px] text-rose-600 dark:text-rose-400 font-bold flex items-center gap-2 animate-pulse">
+              <i class="fa-solid fa-triangle-exclamation text-xs"></i>
+              <span>NOTICE: Occupant Akan ${alarmText} Dalam ${daysRemaining} Hari Lagi!</span>
+            </div>
+          `;
+        }
+      }
+
+      let actionButtonsHtml = "";
+      if (type === 'leave') {
+        actionButtonsHtml = `
+          <button onclick="document.getElementById('confirm-modal').classList.add('hidden'); openLeaveModal('${occ.booking_id}');" class="px-3 py-1.5 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 transition-colors">Edit</button>
+          <button onclick="document.getElementById('confirm-modal').classList.add('hidden'); handleCancelLeave('${occ.booking_id}');" class="px-3 py-1.5 bg-rose-600 text-white rounded-lg font-bold hover:bg-rose-700 transition-colors">Cancel</button>
+          <button onclick="document.getElementById('confirm-modal').classList.add('hidden'); handleToggleCutiBack('${occ.booking_id}');" class="px-3 py-1.5 bg-emerald-600 text-white rounded-lg font-bold hover:bg-emerald-700 transition-colors">Return</button>
+        `;
+      } else {
+        actionButtonsHtml = `
+          <button onclick="document.getElementById('confirm-modal').classList.add('hidden'); openEditOccupantModal('${occ.booking_id}', 'mess-master');" class="px-3 py-1.5 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 transition-colors">Edit</button>
+          <button onclick="document.getElementById('confirm-modal').classList.add('hidden'); handleCheckout('${occ.booking_id}', 'mess-master');" class="px-3 py-1.5 bg-rose-600 text-white rounded-lg font-bold hover:bg-rose-700 transition-colors">Checkout</button>
+          <button onclick="document.getElementById('confirm-modal').classList.add('hidden'); openTransferModal('${occ.booking_id}','${occ.employee_name}','${roomNameDisplay}', 'mess-master');" class="px-3 py-1.5 bg-amber-500 text-white rounded-lg font-bold hover:bg-amber-600 transition-colors">Move</button>
+          <button onclick="document.getElementById('confirm-modal').classList.add('hidden'); openExtendModal('${occ.booking_id}');" class="px-3 py-1.5 bg-violet-600 text-white rounded-lg font-bold hover:bg-violet-700 transition-colors">Extend</button>
+        `;
+      }
+
+      html += `
+        <div class="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+          <div class="space-y-1.5 flex-1 w-full">
+            <div class="flex items-center gap-2 flex-wrap">
+              <strong class="text-slate-900 dark:text-white text-sm">${occ.employee_name}</strong>
+              <span class="text-[10px] font-mono bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-500">${occ.employee_id}</span>
+              <span class="text-[10px] font-black text-indigo-600 bg-indigo-50 dark:bg-indigo-950 px-2 py-0.5 rounded uppercase">${roomNameDisplay}</span>
+            </div>
+            <div class="text-[11px] text-slate-400 font-medium">
+              Grade: ${occ.grade || '-'} • Posisi: ${occ.position || '-'} • Gender: ${occ.gender || '-'} 
+              ${type === 'onduty' ? `• <span class="text-purple-600 font-bold dark:text-purple-400">Origin: ${occ.guest_origin || '-'}</span>` : ''}
+            </div>
+            <div class="grid grid-cols-2 gap-x-4 gap-y-1 pt-1.5 border-t border-slate-100 dark:border-slate-800 font-sans text-[11px]">
+              <div><span class="text-slate-400 font-semibold">${type === 'leave' ? 'Mulai Cuti' : 'Check-In'}:</span> <span class="font-bold">${formatDateDDMMMYYYY(startD)}</span></div>
+              <div><span class="text-slate-400 font-semibold">${type === 'leave' ? 'Selesai Cuti' : 'Est. Departure'}:</span> <span class="font-black text-indigo-600 dark:text-indigo-400">${formatDateDDMMMYYYY(endD)}</span></div>
+              <div class="col-span-2"><span class="text-slate-400 font-semibold">Durasi Menginap:</span> <span class="font-bold text-slate-700 dark:text-slate-200">${durationDays} Hari</span></div>
+              <div class="col-span-2 truncate max-w-[550px]"><span class="text-slate-400 font-semibold">Remarks:</span> <span class="italic text-slate-500 dark:text-slate-400">${occ.remarks || '-'}</span></div>
+              ${noticeHtml}
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5 shrink-0 self-end lg:self-center">
+            ${actionButtonsHtml}
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  html += `</div></div>`;
+
+  // 4. EMBED KE CONFIRM MODAL BOX MMS + MODIFIKASI TOTAL BADGE COUNTER
+  document.getElementById("confirm-title").className = `text-base font-black flex items-center gap-2 ${themeColor}`;
+  document.getElementById("confirm-title").innerHTML = `
+    <i class="fa-solid ${type==='leave'?'fa-plane-departure':'fa-briefcase'}"></i> 
+    <span>${titleText}</span>
+    <span class="ml-2 bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-400 text-xs px-2.5 py-0.5 font-extrabold rounded-full border border-indigo-200/50">${totalStaffCount} Orang</span>
+  `;
+  document.getElementById("confirm-message").innerHTML = html;
+  
+  const okBtn = document.getElementById("confirm-ok-btn");
+  if(okBtn) okBtn.classList.add("hidden");
+  
+  const cancelBtn = document.getElementById("confirm-cancel-btn");
+  if(cancelBtn) {
+    cancelBtn.textContent = "Close";
+    cancelBtn.className = "px-4 py-2 text-xs bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg font-black shadow-xs transition-all";
+    cancelBtn.onclick = function() {
+      document.getElementById("confirm-modal").classList.add("hidden");
+      
+      // Ambil kembali boks konfirmasi ke ukuran kecil default semula
+      const modalBox = document.getElementById("confirm-modal").querySelector(".max-w-sm");
+      if (modalBox) {
+        modalBox.classList.remove("max-w-3xl");
+        modalBox.classList.add("max-w-sm");
+      }
+      
+      if(okBtn) okBtn.classList.remove("hidden");
+      cancelBtn.textContent = "Cancel";
+      cancelBtn.className = "px-4 py-2 text-xs bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg font-bold";
+      cancelBtn.onclick = null;
+    };
+  }
+
+  // =========================================================================
+  // LAYOUT ENGINE: PERLEBAR UKURAN FRAME MODAL BOX MENJADI MAX-W-3XL
+  // =========================================================================
+  const modalBox = document.getElementById("confirm-modal").querySelector(".max-w-sm");
+  if (modalBox) {
+    modalBox.classList.remove("max-w-sm");
+    modalBox.classList.add("max-w-3xl"); // Mengubah ukuran modal menjadi 768px lebar
+  }
+
+  document.getElementById("confirm-modal").classList.remove("hidden");
+}
 
 // WINDOW ONLOAD LAUNCHER (PERBAIKAN SINKRONISASI AKTIVASI LOGIN SCREEN)
 // WINDOW ONLOAD LAUNCHER (REAL-TIME POOLING ENGINE 1 DETIK)
