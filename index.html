@@ -1826,7 +1826,7 @@
     // =========================================================================
     // SUNTIKAN ENDPOINT URL API UNTUK SINKRONISASI GO-LIVE GOOGLE SHEETS
     // =========================================================================
-    const API_URL = "https://script.google.com/macros/s/AKfycbwfhM3H1Dhsnv8qPVxwqEOYimyyEKkB4ONRfneG6m59nWItOvTYVtDrAhDB4aUGG4B2/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbyGSYYbr37It8ktEhReXT938qotP0CGVp6aYwHp8viJNudMIiqZFbkRbZkACYYjbtUO/exec";
 
     // ✅ FUNGSI HELPER MUTLAK: Mengonversi Tautan Google Drive Menjadi Direct Hotlink Gambar Mentah Anti-CORS
     function getDirectMaintImgUrl(rawUrl) {
@@ -3932,19 +3932,22 @@
 
     function openRoomDetail(locId) {
       cameFromRoomDetail = true; 
-      const loc = mockLocations.find(l => l.location_id === locId);
+      const loc = mockLocations.find(l => String(l.location_id).trim() === String(locId).trim());
       if (!loc) return;
       lastOpenedRoomDetailId = locId;
 
       document.getElementById("edit-room-id").value = loc.location_id;
-      document.getElementById("edit-room-name").value = loc.name;
-      document.getElementById("edit-room-floor").value = loc.floor;
-      document.getElementById("edit-room-capacity").value = loc.capacity;
-      document.getElementById("edit-room-status").value = loc.status;
+      document.getElementById("edit-room-name").value = loc.name || loc.Name || "";
+      document.getElementById("edit-room-floor").value = loc.floor || loc.Floor || "";
+      document.getElementById("edit-room-capacity").value = loc.capacity || loc.Capacity || 4;
+      document.getElementById("edit-room-status").value = loc.status || loc.Status || "Ready";
       
-      // Ambil remarks dengan pengecekan huruf kecil maupun besar dari database
-      const roomRemarksVal = loc.remarks || loc.Remarks || "";
-      document.getElementById("edit-room-remarks").value = roomRemarksVal;
+      // Mengambil data remarks dari kolom remarks, atau dari classification jika ada sisa data tertukar
+      let roomRemarksVal = loc.remarks || loc.Remarks || "";
+      if (!roomRemarksVal && loc.classification && loc.classification !== "Ringan" && loc.classification !== "Sedang" && loc.classification !== "Berat") {
+        roomRemarksVal = loc.classification;
+      }
+      document.getElementById("edit-room-remarks").value = roomRemarksVal || "";
 
       // --- SUNTIKAN VISUALISASI TOMBOL DELETE BERDASARKAN ROLE OPERASIONAL ---
       const actionBtnContainer = document.getElementById("save-room-changes-btn")?.parentNode;
@@ -4119,15 +4122,27 @@
       } else {
         // SINKRONISASI SEKETIKA: Menyeimbangkan data DOM sesaat setelah modal dibuka untuk mencegah bug visual
         const id = document.getElementById("edit-room-id").value;
-        const room = mockLocations.find(l => l.location_id === id);
+        const room = mockLocations.find(l => String(l.location_id).trim() === String(id).trim());
         
         const statusField = document.getElementById("edit-room-status");
         if (room && statusField) {
-          statusField.value = room.status || "Ready";
+          statusField.value = room.status || room.Status || "Ready";
         }
         
         if (room && document.getElementById("manage-room-classification")) {
-          document.getElementById("manage-room-classification").value = room.classification || "Ringan";
+          document.getElementById("manage-room-classification").value = room.classification || room.Classification || "Ringan";
+        }
+
+        // Sinkronisasi otomatis isi remarks jika modal dibuka kembali
+        if (room && document.getElementById("edit-room-remarks")) {
+          let remVal = "";
+          for (let k in room) {
+            if (k.trim().toLowerCase() === "remarks") {
+              remVal = room[k];
+              break;
+            }
+          }
+          document.getElementById("edit-room-remarks").value = remVal || "";
         }
         
         // Panggil langsung fungsi penentu visibilitas tanpa timeout agar sinkronisasi berjalan instan
@@ -4172,6 +4187,7 @@
         floor: document.getElementById("edit-room-floor").value,
         capacity: parseInt(document.getElementById("edit-room-capacity").value),
         status: statusValue,
+        classification: document.getElementById("manage-room-classification") ? document.getElementById("manage-room-classification").value : "",
         remarks: document.getElementById("edit-room-remarks").value || ""
       };
 
