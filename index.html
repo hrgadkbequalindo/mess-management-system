@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MMS - Mess Management System</title>
+  <title>CMS - Camp Management System</title>
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -97,7 +97,7 @@
         <button type="submit" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/20 transition-all text-xs mt-2">Sign In</button>
       </form>
       <div class="text-[10px] text-center text-slate-400 border-t border-slate-100 dark:border-slate-800 pt-4">
-        &copy; 2026 MMS. All rights reserved.
+        &copy; 2026 CMS. All rights reserved.
       </div>
     </div>
   </div>
@@ -761,7 +761,7 @@
 
         <!-- Sisi Kanan: Live QR Tag Generator -->
         <div class="bg-slate-50 dark:bg-slate-950/60 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col items-center text-center">
-          <span class="text-[9px] text-slate-400 font-extrabold uppercase tracking-widest block mb-2.5">MMS Physical QR Tag</span>
+          <span class="text-[9px] text-slate-400 font-extrabold uppercase tracking-widest block mb-2.5">CMS Physical QR Tag</span>
           <div id="view-ast-qr-container" class="bg-white p-2 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm">
             <!-- Rendered dynamically -->
           </div>
@@ -1096,8 +1096,8 @@
             <img src="https://lh3.googleusercontent.com/d/1M0mrJ9bLfGABlM_SZhDrptCHGHMKtRK1=w200-h200" alt="MMS Logo" class="w-full h-full object-contain">
           </div>
           <div id="logo-text" class="flex flex-col transition-all duration-200">
-            <span class="font-extrabold text-slate-900 dark:text-white tracking-tight text-base leading-none">MMS</span>
-            <span class="text-[8px] text-slate-400 dark:text-slate-500 font-bold tracking-tight whitespace-nowrap mt-0.5">Mess Management System</span>
+            <span class="font-extrabold text-slate-900 dark:text-white tracking-tight text-base leading-none">CMS</span>
+            <span class="text-[8px] text-slate-400 dark:text-slate-500 font-bold tracking-tight whitespace-nowrap mt-0.5">Camp Management System</span>
           </div>
         </div>
 
@@ -1248,7 +1248,7 @@
           <div class="bg-gradient-to-r from-indigo-600 via-indigo-700 to-indigo-800 rounded-2xl p-6 text-white shadow-md relative overflow-hidden">
             <div class="relative z-10 max-w-xl">
               <span class="text-xs font-semibold bg-indigo-500/50 text-indigo-100 px-3 py-1 rounded-full uppercase tracking-wider">INTEGRATED MESS CONTROLLER</span>
-              <h2 class="text-2xl font-black mt-2 tracking-tight">MMS Integrated Mess Dashboard</h2>
+              <h2 class="text-2xl font-black mt-2 tracking-tight">CMS Integrated Mess Dashboard</h2>
               <p class="text-indigo-100/90 text-sm mt-2 leading-relaxed">Manage Asset Mess lifecycles and monitor employee room occupancy in real-time from a unified control panel.</p>
             </div>
             <div class="absolute right-6 bottom-0 top-0 opacity-10 flex items-center justify-center">
@@ -1754,7 +1754,7 @@
 
       <!-- FOOTER -->
       <footer class="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-4 px-6 text-center text-xs text-slate-400 mt-auto shrink-0 transition-colors">
-        &copy; 2026 MMS - Mess Management System
+        &copy; 2026 CMS - Camp Management System
       </footer>
     </main>
 
@@ -1772,7 +1772,7 @@
       <h3 id="choice-modal-title" class="font-bold text-sm text-slate-800 dark:text-white">Permission Required</h3>
       
       <!-- Tambahkan ID choice-modal-desc -->
-      <p id="choice-modal-desc" class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 mb-4">MMS requires permission to access your device hardware interface.</p>
+      <p id="choice-modal-desc" class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 mb-4">CMS requires permission to access your device hardware interface.</p>
       
       <div class="space-y-2 text-xs">
         <button type="button" onclick="requestPermissionAndTrigger('camera')" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-md transition-colors">
@@ -1826,7 +1826,7 @@
     // =========================================================================
     // SUNTIKAN ENDPOINT URL API UNTUK SINKRONISASI GO-LIVE GOOGLE SHEETS
     // =========================================================================
-    const API_URL = "https://script.google.com/macros/s/AKfycbyU0GgW_L-zstmgom-Ni4eDczAV_1HWpnmyMat5rt1atho4UQVh6XmUBYPLp25ebMs/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbwfhM3H1Dhsnv8qPVxwqEOYimyyEKkB4ONRfneG6m59nWItOvTYVtDrAhDB4aUGG4B2/exec";
 
     // ✅ FUNGSI HELPER MUTLAK: Mengonversi Tautan Google Drive Menjadi Direct Hotlink Gambar Mentah Anti-CORS
     function getDirectMaintImgUrl(rawUrl) {
@@ -2492,7 +2492,7 @@
             <img src="${qrUrl}" style="width: 100%; height: 100%; object-fit: contain;" />
           </div>
           <p style="font-size: 11px; font-weight: 600; color: #475569; margin: 0 0 14px 0; line-height: 1.4;">${asset.name}</p>
-          <h4 style="font-size: 8px; color: #94a3b8; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; margin: 0;">MMS ASSET TAG</h4>
+          <h4 style="font-size: 8px; color: #94a3b8; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; margin: 0;">CMS ASSET TAG</h4>
         </div>
       `;
 
@@ -3722,7 +3722,7 @@
           modalTitle.className = "font-bold text-sm text-slate-800 dark:text-white";
         }
         if(modalDesc) {
-          modalDesc.textContent = "MMS requires permission to access your device hardware interface.";
+          modalDesc.textContent = "CMS requires permission to access your device hardware interface.";
           modalDesc.className = "text-[10px] text-slate-400 dark:text-slate-500 mt-1 mb-4";
         }
         if(btnCamera) btnCamera.textContent = "Allow & Open Camera";
@@ -3941,7 +3941,10 @@
       document.getElementById("edit-room-floor").value = loc.floor;
       document.getElementById("edit-room-capacity").value = loc.capacity;
       document.getElementById("edit-room-status").value = loc.status;
-      document.getElementById("edit-room-remarks").value = loc.remarks || "";
+      
+      // Ambil remarks dengan pengecekan huruf kecil maupun besar dari database
+      const roomRemarksVal = loc.remarks || loc.Remarks || "";
+      document.getElementById("edit-room-remarks").value = roomRemarksVal;
 
       // --- SUNTIKAN VISUALISASI TOMBOL DELETE BERDASARKAN ROLE OPERASIONAL ---
       const actionBtnContainer = document.getElementById("save-room-changes-btn")?.parentNode;
