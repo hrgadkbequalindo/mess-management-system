@@ -2591,189 +2591,189 @@
   function renderMmsRooms() {
     let countAll = 0, countReady = 0, countFull = 0, countMaint = 0, countBroken = 0;
 
-      // PROSES 1: HITUNG LIVE COUNTER BADGES BERDASARKAN FILTER GEOMETRIS YANG AKTIF (DINAMIS)
-      mockLocations.forEach(loc => {
-        const matchesFloor = (activeFloorFilter === "All" || loc.floor === activeFloorFilter);
-        
-        let matchesSubBlock = true;
-        if (activeSubBlockFilter !== "All") {
-          if (activeSubBlockFilter === "VIP") {
-            matchesSubBlock = loc.name.toUpperCase().includes("VIP");
-          } else {
-            const letter = activeSubBlockFilter.replace("Blok ", "").trim().toUpperCase();
-            matchesSubBlock = loc.name.toUpperCase().includes(" " + letter + " ");
-          }
+    // Ambil kata kunci dari kotak input pencarian
+    const searchInput = document.getElementById("search-mms-rooms");
+    const searchRoomQuery = searchInput ? searchInput.value.trim().toLowerCase() : "";
+
+    // PROSES 1: HITUNG LIVE COUNTER BADGES BERDASARKAN FILTER GEOMETRIS YANG AKTIF (DINAMIS)
+    mockLocations.forEach(loc => {
+      const matchesFloor = (activeFloorFilter === "All" || loc.floor === activeFloorFilter);
+      
+      let matchesSubBlock = true;
+      if (activeSubBlockFilter !== "All") {
+        if (activeSubBlockFilter === "VIP") {
+          matchesSubBlock = (loc.name || "").toUpperCase().includes("VIP");
+        } else {
+          const letter = activeSubBlockFilter.replace("Blok ", "").trim().toUpperCase();
+          matchesSubBlock = (loc.name || "").toUpperCase().includes(" " + letter + " ");
         }
+      }
 
-        // Jika kamar tidak lolos filter area/sub-blok saat ini, jangan hitung ke dalam counter status badge
-        if (!matchesFloor || !matchesSubBlock) return;
+      // Jika kamar tidak lolos filter area/sub-blok saat ini, jangan hitung ke dalam counter status badge
+      if (!matchesFloor || !matchesSubBlock) return;
 
-        countAll++;
-        // PERBAIKAN MUTAKHIR: Ambil semua occupant yang berstatus Active, Reserve, Reserved, maupun yang sedang Leave
-        const occupants = mockOccupants.filter(o => o.location_id === loc.location_id && (o.status === "Active" || o.status === "Reserve" || o.status === "Reserved" || String(o.status).toLowerCase() === "leave"));
-        // Hitung kasur terisi jika statusnya Active, Leave, atau bendera is_on_leave aktif (Mencakup leave saat ini & leave akan datang)
-        const activeOnsiteCount = occupants.filter(o => o.status === "Active" || String(o.status).toLowerCase() === "leave" || o.is_on_leave === true || o.is_on_leave === "TRUE").length;
-        const capacity = parseInt(loc.capacity || 4);
-        
-        if (loc.status === "Broken") countBroken++;
-        else if (loc.status === "Maintenance") countMaint++;
-        else if (loc.status === "Ready" && activeOnsiteCount >= capacity) countFull++;
-        else countReady++;
+      countAll++;
+      const occupants = mockOccupants.filter(o => String(o.location_id).trim() === String(loc.location_id).trim() && (o.status === "Active" || o.status === "Reserve" || o.status === "Reserved" || String(o.status).toLowerCase() === "leave"));
+      const activeOnsiteCount = occupants.filter(o => o.status === "Active" || String(o.status).toLowerCase() === "leave" || o.is_on_leave === true || o.is_on_leave === "TRUE").length;
+      const capacity = parseInt(loc.capacity || 4);
+      
+      if (loc.status === "Broken") countBroken++;
+      else if (loc.status === "Maintenance") countMaint++;
+      else if (loc.status === "Ready" && activeOnsiteCount >= capacity) countFull++;
+      else countReady++;
+    });
+
+    const btnAll = document.getElementById("flt-room-status-All");
+    const btnReady = document.getElementById("flt-room-status-Ready");
+    const btnFull = document.getElementById("flt-room-status-Full");
+    const btnMaint = document.getElementById("flt-room-status-Maintenance");
+    const btnBroken = document.getElementById("flt-room-status-Broken");
+
+    if (btnAll) btnAll.innerHTML = `All (${countAll})`;
+    if (btnReady) btnReady.innerHTML = `Ready (${countReady})`;
+    if (btnFull) btnFull.innerHTML = `Full (${countFull})`;
+    if (btnMaint) btnMaint.innerHTML = `Maintenance (${countMaint})`;
+    if (btnBroken) btnBroken.innerHTML = `Broken (${countBroken})`;
+
+    let nusTotal = 0, nusOccupied = 0;
+    let khaTotal = 0, khaOccupied = 0;
+
+    mockLocations.forEach(loc => {
+      const cap = parseInt(loc.capacity || 4);
+      const occupants = mockOccupants.filter(o => {
+        const s = String(o.status || "").toLowerCase();
+        return String(o.location_id).trim() === String(loc.location_id).trim() && (s === "active" || s === "reserve" || s === "reserved" || s === "leave" || s === "on leave");
       });
+      
+      const activeCount = occupants.filter(o => {
+        const s = String(o.status || "").toLowerCase();
+        return s === "active" || s === "leave" || s === "on leave" || o.is_on_leave === true || o.is_on_leave === "TRUE";
+      }).length;
+      
+      if (loc.floor === "Mess Nusantara") { nusTotal += cap; nusOccupied += activeCount; }
+      else if (loc.floor === "Mess Khatulistiwa") { khaTotal += cap; khaOccupied += activeCount; }
+    });
 
-      const btnAll = document.getElementById("flt-room-status-All");
-      const btnReady = document.getElementById("flt-room-status-Ready");
-      const btnFull = document.getElementById("flt-room-status-Full");
-      const btnMaint = document.getElementById("flt-room-status-Maintenance");
-      const btnBroken = document.getElementById("flt-room-status-Broken");
+    if(document.getElementById("nusantara-total-beds")) document.getElementById("nusantara-total-beds").textContent = nusTotal;
+    if(document.getElementById("nusantara-occupied-beds")) document.getElementById("nusantara-occupied-beds").textContent = nusOccupied;
+    if(document.getElementById("nusantara-available-beds")) document.getElementById("nusantara-available-beds").textContent = Math.max(0, nusTotal - nusOccupied);
+    
+    if(document.getElementById("khatulistiwa-total-beds")) document.getElementById("khatulistiwa-total-beds").textContent = khaTotal;
+    if(document.getElementById("khatulistiwa-occupied-beds")) document.getElementById("khatulistiwa-occupied-beds").textContent = khaOccupied;
+    if(document.getElementById("khatulistiwa-available-beds")) document.getElementById("khatulistiwa-available-beds").textContent = Math.max(0, khaTotal - khaOccupied);
 
-      if (btnAll) btnAll.innerHTML = `All (${countAll})`;
-      if (btnReady) btnReady.innerHTML = `Ready (${countReady})`;
-      if (btnFull) btnFull.innerHTML = `Full (${countFull})`;
-      if (btnMaint) btnMaint.innerHTML = `Maintenance (${countMaint})`;
-      if (btnBroken) btnBroken.innerHTML = `Broken (${countBroken})`;
+    const combinedTotal = nusTotal + khaTotal;
+    const combinedOccupied = nusOccupied + khaOccupied;
+    
+    if(document.getElementById("overall-total-beds")) document.getElementById("overall-total-beds").textContent = combinedTotal;
+    if(document.getElementById("overall-occupied-beds")) document.getElementById("overall-occupied-beds").textContent = combinedOccupied;
+    if(document.getElementById("overall-available-beds")) document.getElementById("overall-available-beds").textContent = Math.max(0, combinedTotal - combinedOccupied);
 
-      let nusTotal = 0, nusOccupied = 0;
-      let khaTotal = 0, khaOccupied = 0;
+    const grid = document.getElementById("mms-rooms-grid");
+    const mapPlan = document.getElementById("visual-map-plan");
+    const paginContainer = document.getElementById("room-map-pagination");
+    const subBlockContainer = document.getElementById("sub-block-buttons-render");
+    if(!grid || !mapPlan) return;
 
-      mockLocations.forEach(loc => {
-        const cap = parseInt(loc.capacity || 4);
-        // PERBAIKAN SINKRONISASI AREA: Tangkap string "active", "reserve", "reserved", "leave", maupun "on leave" secara lowercase murni
-        const occupants = mockOccupants.filter(o => {
-          const s = String(o.status || "").toLowerCase();
-          return o.location_id === loc.location_id && (s === "active" || s === "reserve" || s === "reserved" || s === "leave" || s === "on leave");
+    // 1. GENERATE FILTER SUB-BLOK
+    let blockOptions = ['All'];
+    if (activeFloorFilter === "Mess Nusantara") {
+      blockOptions = ['All', 'VIP', 'Blok B', 'Blok C', 'Blok D', 'Blok E'];
+    } else if (activeFloorFilter === "Mess Khatulistiwa") {
+      blockOptions = ['All', 'Blok A', 'Blok B', 'Blok C', 'Blok D', 'Blok E', 'Blok F', 'Blok G', 'Blok H', 'Blok I', 'Blok J', 'Blok K'];
+    }
+    if (!blockOptions.includes(activeSubBlockFilter)) activeSubBlockFilter = 'All';
+
+    if (subBlockContainer) {
+      subBlockContainer.innerHTML = blockOptions.map(blk => {
+        const isAct = activeSubBlockFilter === blk;
+        return `<button type="button" onclick="activeSubBlockFilter='${blk}'; roomCurrentPage=1; renderMmsRooms();" class="px-2.5 py-1 rounded font-bold ${isAct ? 'bg-indigo-600 text-white border border-indigo-500 shadow-sm' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}">${blk}</button>`;
+      }).join('');
+    }
+
+    // 2. ATURAN FILTER DATA RUANGAN (DENGAN TOLERANSI NAMA PENGHUNI & KAMAR YANG KUAT)
+    let fltTotalBeds = 0;
+    let fltOccupiedBeds = 0;
+
+    const baseFiltered = mockLocations.filter(loc => {
+      const matchesFloor = (activeFloorFilter === "All" || loc.floor === activeFloorFilter);
+      
+      let matchesSubBlock = true;
+      if (activeSubBlockFilter !== "All") {
+        if (activeSubBlockFilter === "VIP") {
+          matchesSubBlock = (loc.name || "").toUpperCase().includes("VIP");
+        } else {
+          const letter = activeSubBlockFilter.replace("Blok ", "").trim().toUpperCase();
+          matchesSubBlock = (loc.name || "").toUpperCase().includes(" " + letter + " ");
+        }
+      }
+
+      // Ambil seluruh penghuni kamar ini
+      const occupants = mockOccupants.filter(o => 
+        String(o.location_id).trim() === String(loc.location_id).trim() && 
+        o.status !== "Checked-Out" && 
+        o.status !== ""
+      );
+
+      // PENCARIAN TINGKAT TINGGI: Cari ke nama kamar, floor, atau data penghuni (nama, NIK, guest origin, remarks)
+      let matchesSearch = true;
+      if (searchRoomQuery !== "") {
+        const roomNameStr = String(loc.name || "").toLowerCase();
+        const roomFloorStr = String(loc.floor || "").toLowerCase();
+        const roomMatch = roomNameStr.includes(searchRoomQuery) || roomFloorStr.includes(searchRoomQuery);
+
+        const occupantMatch = occupants.some(o => {
+          const empName = String(o.employee_name || o.Employee_Name || o.name || "").toLowerCase();
+          const empId = String(o.employee_id || o.Employee_Id || o.nik || "").toLowerCase();
+          const origin = String(o.guest_origin || o.origin || "").toLowerCase();
+          const remarks = String(o.remarks || "").toLowerCase();
+          return empName.includes(searchRoomQuery) || empId.includes(searchRoomQuery) || origin.includes(searchRoomQuery) || remarks.includes(searchRoomQuery);
         });
-        
-        // Ambil jumlah staff yang menduduki kasur (Active atau sedang Leave/On Leave atau memiliki bendera TRUE)
-        const activeCount = occupants.filter(o => {
-          const s = String(o.status || "").toLowerCase();
-          return s === "active" || s === "leave" || s === "on leave" || o.is_on_leave === true || o.is_on_leave === "TRUE";
-        }).length;
-        
-        if (loc.floor === "Mess Nusantara") { nusTotal += cap; nusOccupied += activeCount; }
-        else if (loc.floor === "Mess Khatulistiwa") { khaTotal += cap; khaOccupied += activeCount; }
-      });
 
-      // Menembak nilai murni ke layar UI berdasarkan penyesuaian regulasi kasur staff cuti/on leave
-      if(document.getElementById("nusantara-total-beds")) document.getElementById("nusantara-total-beds").textContent = nusTotal;
-      if(document.getElementById("nusantara-occupied-beds")) document.getElementById("nusantara-occupied-beds").textContent = nusOccupied;
-      if(document.getElementById("nusantara-available-beds")) document.getElementById("nusantara-available-beds").textContent = Math.max(0, nusTotal - nusOccupied);
-      
-      if(document.getElementById("khatulistiwa-total-beds")) document.getElementById("khatulistiwa-total-beds").textContent = khaTotal;
-      if(document.getElementById("khatulistiwa-occupied-beds")) document.getElementById("khatulistiwa-occupied-beds").textContent = khaOccupied;
-      if(document.getElementById("khatulistiwa-available-beds")) document.getElementById("khatulistiwa-available-beds").textContent = Math.max(0, khaTotal - khaOccupied);
-
-      // Gabungkan total akumulasi global ke panel summary card paling kiri (Summary All Mess Status)
-      const combinedTotal = nusTotal + khaTotal;
-      const combinedOccupied = nusOccupied + khaOccupied;
-      
-      if(document.getElementById("overall-total-beds")) document.getElementById("overall-total-beds").textContent = combinedTotal;
-      if(document.getElementById("overall-occupied-beds")) document.getElementById("overall-occupied-beds").textContent = combinedOccupied;
-      if(document.getElementById("overall-available-beds")) document.getElementById("overall-available-beds").textContent = Math.max(0, combinedTotal - combinedOccupied);
-
-      const grid = document.getElementById("mms-rooms-grid");
-      const mapPlan = document.getElementById("visual-map-plan");
-      const paginContainer = document.getElementById("room-map-pagination");
-      const subBlockContainer = document.getElementById("sub-block-buttons-render");
-      if(!grid || !mapPlan) return;
-
-      // 1. GENERATE FILTER SUB-BLOK SINKRONISASI AREA GEDUNG SECARA DINAMIS
-      let blockOptions = ['All'];
-      if (activeFloorFilter === "Mess Nusantara") {
-        blockOptions = ['All', 'VIP', 'Blok B', 'Blok C', 'Blok D', 'Blok E'];
-      } else if (activeFloorFilter === "Mess Khatulistiwa") {
-        blockOptions = ['All', 'Blok A', 'Blok B', 'Blok C', 'Blok D', 'Blok E', 'Blok F', 'Blok G', 'Blok H', 'Blok I', 'Blok J', 'Blok K'];
-      }
-      if (!blockOptions.includes(activeSubBlockFilter)) activeSubBlockFilter = 'All';
-
-      if (subBlockContainer) {
-        subBlockContainer.innerHTML = blockOptions.map(blk => {
-          const isAct = activeSubBlockFilter === blk;
-          return `<button type="button" onclick="activeSubBlockFilter='${blk}'; roomCurrentPage=1; renderMmsRooms();" class="px-2.5 py-1 rounded font-bold ${isAct ? 'bg-indigo-600 text-white border border-indigo-500 shadow-sm' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}">${blk}</button>`;
-        }).join('');
+        matchesSearch = (roomMatch || occupantMatch);
       }
 
-      // 2. ATURAN FILTER DATA RUANGAN BERLAPIS (STATUS, SUB-BLOK AREA, & SEARCH)
-      let fltTotalBeds = 0;
-      let fltOccupiedBeds = 0;
-
-      // Ambil teks pencarian yang diketik user
-      const searchRoomQuery = document.getElementById("search-mms-rooms") ? document.getElementById("search-mms-rooms").value.trim().toLowerCase() : "";
-
-      const baseFiltered = mockLocations.filter(loc => {
-        const matchesFloor = (activeFloorFilter === "All" || loc.floor === activeFloorFilter);
-        
-        let matchesSubBlock = true;
-        if (activeSubBlockFilter !== "All") {
-          if (activeSubBlockFilter === "VIP") {
-            matchesSubBlock = loc.name.toUpperCase().includes("VIP");
-          } else {
-            const letter = activeSubBlockFilter.replace("Blok ", "").trim().toUpperCase();
-            matchesSubBlock = loc.name.toUpperCase().includes(" " + letter + " ");
-          }
-        }
-
-        const occupants = mockOccupants.filter(o => o.location_id === loc.location_id && o.status !== "Checked-Out" && o.status !== "");
-
-        // Pengecekan kata kunci search ke Nama Kamar, Nama Karyawan, dan NIK
-        let matchesSearch = true;
-        if (searchRoomQuery !== "") {
-          const roomNameMatches = (loc.name || "").toLowerCase().includes(searchRoomQuery);
-          const occupantMatches = occupants.some(o => 
-            (o.employee_name && o.employee_name.toLowerCase().includes(searchRoomQuery)) ||
-            (o.employee_id && o.employee_id.toLowerCase().includes(searchRoomQuery))
-          );
-          matchesSearch = (roomNameMatches || occupantMatches);
-        }
-
-        // PERBAIKAN MUTAKHIR: Kasur tetap dihitung terisi bagi yang statusnya Active, Leave, atau memiliki bendera cuti aktif
-        const activeOnsiteCount = occupants.filter(o => o.status === "Active" || String(o.status).toLowerCase() === "leave" || o.is_on_leave === true || o.is_on_leave === "TRUE").length;
-        const capacity = parseInt(loc.capacity || 4);
-        
-        let dynamicStatus = loc.status;
-        if (loc.status === "Ready" && activeOnsiteCount >= capacity) dynamicStatus = "Full";
-
-        // matchesSearch dimasukkan ke filter
-        const isMatched = matchesFloor && matchesSubBlock && matchesSearch && (activeStatusFilter === "All" || dynamicStatus === activeStatusFilter);
-        
-        // SUNTIKAN KALKULASI: Akumulasikan total kasur jika kamar lolos dari filter yang aktif
-        if (isMatched) {
-          fltTotalBeds += capacity;
-          fltOccupiedBeds += activeOnsiteCount;
-        }
-
-        return isMatched;
-      });
-
-      // PERBAIKAN: Jalankan fungsi sort bobot kustom sebelum data dirender ke layout grid bawah
-      baseFiltered.sort((a, b) => getCustomRoomWeight(a) - getCustomRoomWeight(b));
-
-      // PERBAIKAN UTAMA: Tuliskan hasil kalkulasi filter aktif ke element label HTML
-      if (document.getElementById("lbl-flt-beds-total")) document.getElementById("lbl-flt-beds-total").textContent = fltTotalBeds;
-      if (document.getElementById("lbl-flt-beds-occupied")) document.getElementById("lbl-flt-beds-occupied").textContent = fltOccupiedBeds;
-      if (document.getElementById("lbl-flt-beds-available")) document.getElementById("lbl-flt-beds-available").textContent = Math.max(0, fltTotalBeds - fltOccupiedBeds);
-
-      // 3. ENGINE PAGINATION MAP ATAS: AMBIL DATA BERDASARKAN HALAMAN AKTIF
-      const totalItems = baseFiltered.length;
-      const totalPages = Math.ceil(totalItems / roomItemsPerPage) || 1;
+      const activeOnsiteCount = occupants.filter(o => o.status === "Active" || String(o.status).toLowerCase() === "leave" || o.is_on_leave === true || o.is_on_leave === "TRUE").length;
+      const capacity = parseInt(loc.capacity || 4);
       
-      // Validasi batas atas penunjuk halaman aktif
-      if (roomCurrentPage > totalPages) roomCurrentPage = totalPages;
-      if (roomCurrentPage < 1) roomCurrentPage = 1;
+      let dynamicStatus = loc.status;
+      if (loc.status === "Ready" && activeOnsiteCount >= capacity) dynamicStatus = "Full";
 
-      const startIndex = (roomCurrentPage - 1) * roomItemsPerPage;
-      const endIndex = startIndex + roomItemsPerPage;
+      const isMatched = matchesFloor && matchesSubBlock && matchesSearch && (activeStatusFilter === "All" || dynamicStatus === activeStatusFilter);
       
-      // Ambil potongan tepat maksimal 15 kamar untuk layout grid atas
-      const paginatedMapRooms = baseFiltered.slice(startIndex, endIndex);
+      if (isMatched) {
+        fltTotalBeds += capacity;
+        fltOccupiedBeds += activeOnsiteCount;
+      }
 
-      // BERSIHKAN TOTAL DENAH ATAS (Mencegah Glitch Double Duplikasi Data)
-      mapPlan.innerHTML = "";
-      
-      // Render tepat maksimal 15 Box Denah Kamar Terpilih Ke Grid Atas
+      return isMatched;
+    });
+
+    baseFiltered.sort((a, b) => getCustomRoomWeight(a) - getCustomRoomWeight(b));
+
+    if (document.getElementById("lbl-flt-beds-total")) document.getElementById("lbl-flt-beds-total").textContent = fltTotalBeds;
+    if (document.getElementById("lbl-flt-beds-occupied")) document.getElementById("lbl-flt-beds-occupied").textContent = fltOccupiedBeds;
+    if (document.getElementById("lbl-flt-beds-available")) document.getElementById("lbl-flt-beds-available").textContent = Math.max(0, fltTotalBeds - fltOccupiedBeds);
+
+    // 3. PAGINATION DENAH MAP ATAS
+    const totalItems = baseFiltered.length;
+    const totalPages = Math.ceil(totalItems / roomItemsPerPage) || 1;
+    
+    if (roomCurrentPage > totalPages) roomCurrentPage = totalPages;
+    if (roomCurrentPage < 1) roomCurrentPage = 1;
+
+    const startIndex = (roomCurrentPage - 1) * roomItemsPerPage;
+    const endIndex = startIndex + roomItemsPerPage;
+    const paginatedMapRooms = baseFiltered.slice(startIndex, endIndex);
+
+    mapPlan.innerHTML = "";
+    
+    if (paginatedMapRooms.length === 0) {
+      mapPlan.innerHTML = `<div class="col-span-5 py-6 text-center text-xs text-slate-400 font-semibold italic">Tidak ada denah kamar yang cocok dengan pencarian "${searchRoomQuery}".</div>`;
+    } else {
       paginatedMapRooms.forEach(loc => {
         const capacity = parseInt(loc.capacity || 4);
-        const occupants = mockOccupants.filter(o => o.location_id === loc.location_id && (o.status === "Active" || o.status === "Reserve" || o.status === "Reserved"));
+        const occupants = mockOccupants.filter(o => String(o.location_id).trim() === String(loc.location_id).trim() && (o.status === "Active" || o.status === "Reserve" || o.status === "Reserved"));
         const activeOnsiteCount = occupants.filter(o => o.status === "Active").length;
 
         let resolvedStatus = loc.status;
@@ -2797,38 +2797,46 @@
         `;
         mapPlan.appendChild(block);
       });
+    }
 
-      // Render Kontrol Paging Angka di Pojok Kanan Bawah Denah
-      if (paginContainer) {
-        if (totalPages <= 1) {
-          paginContainer.innerHTML = "";
-        } else {
-          let paginHtml = `<div class="flex items-center gap-1.5 mt-2 bg-white dark:bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 shadow-xs"><span class="text-[10px] text-slate-400 font-semibold mr-2">Showing ${startIndex+1}-${Math.min(endIndex, totalItems)} of ${totalItems} rooms</span>`;
-          for (let p = 1; p <= totalPages; p++) {
-            paginHtml += `<button type="button" onclick="roomCurrentPage=${p}; renderMmsRooms();" class="px-2.5 py-1 rounded text-[10px] font-black tracking-wide transition-all ${roomCurrentPage === p ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 hover:bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}">${p}</button>`;
-          }
-          paginHtml += `</div>`;
-          paginContainer.innerHTML = paginHtml;
+    if (paginContainer) {
+      if (totalPages <= 1) {
+        paginContainer.innerHTML = "";
+      } else {
+        let paginHtml = `<div class="flex items-center gap-1.5 mt-2 bg-white dark:bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 shadow-xs"><span class="text-[10px] text-slate-400 font-semibold mr-2">Showing ${startIndex+1}-${Math.min(endIndex, totalItems)} of ${totalItems} rooms</span>`;
+        for (let p = 1; p <= totalPages; p++) {
+          paginHtml += `<button type="button" onclick="roomCurrentPage=${p}; renderMmsRooms();" class="px-2.5 py-1 rounded text-[10px] font-black tracking-wide transition-all ${roomCurrentPage === p ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 hover:bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}">${p}</button>`;
         }
+        paginHtml += `</div>`;
+        paginContainer.innerHTML = paginHtml;
       }
+    }
 
-      // 4. GENERATE LIST DETAIL KARTU BAWAH DENGAN FILTER PEMISAH BARIS GRID (ROW SEPARATED)
-    grid.innerHTML = ""; // Bersihkan total kontainer utama untuk mencegah tumpang tindih layout
+    // 4. GENERATE LIST KARTU BAWAH
+    grid.innerHTML = "";
 
-    // Tampilkan informasi jika pencarian tidak menemukan hasil
+    // Tampilkan jika kosong
     if (baseFiltered.length === 0) {
       grid.innerHTML = `
         <div class="col-span-1 md:col-span-2 lg:col-span-3 py-12 text-center text-slate-400 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
           <i class="fa-solid fa-magnifying-glass text-3xl mb-2 text-slate-300 dark:text-slate-600"></i>
-          <p class="text-sm font-semibold text-slate-600 dark:text-slate-300">Tidak ada kamar atau penghuni yang cocok.</p>
+          <p class="text-sm font-semibold text-slate-600 dark:text-slate-300">Tidak ada kamar atau penghuni yang cocok dengan "${searchRoomQuery}".</p>
           <p class="text-xs text-slate-400 mt-1">Coba gunakan kata kunci pencarian yang lain.</p>
         </div>
       `;
       return;
     }
 
+    // Jika sedang mencari kata kunci, tampilkan kartu langsung tanpa terhalang sekat blok
+    if (searchRoomQuery !== "") {
+      baseFiltered.forEach(loc => {
+        const cardElement = createSingleCardElement(loc);
+        grid.appendChild(cardElement);
+      });
+      return;
+    }
+
     if (activeSubBlockFilter === "All") {
-      // Kelompokkan data kamar berdasarkan kombinasi Area dan nama Blok
       const groups = {};
       baseFiltered.forEach(loc => {
         const blockName = getCustomRoomBlock(loc.name);
@@ -2837,11 +2845,9 @@
         groups[groupKey].push(loc);
       });
 
-      // Render per baris kelompok grup
       Object.keys(groups).forEach(groupKey => {
         const roomsInGroup = groups[groupKey];
 
-        // A. Tambahkan Banner Judul Kelompok Blok (Memenuhi lebar 3 kolom grid)
         const headerDiv = document.createElement("div");
         headerDiv.className = "col-span-1 md:col-span-2 lg:col-span-3 mt-6 mb-2 flex items-center";
         headerDiv.innerHTML = `
@@ -2854,7 +2860,6 @@
         `;
         grid.appendChild(headerDiv);
 
-        // B. Buat container Sub-Grid murni 3 kolom untuk memaksa baris baru bagi blok berikutnya
         const subGridContainer = document.createElement("div");
         subGridContainer.className = "col-span-1 md:col-span-2 lg:col-span-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full";
 
@@ -2866,7 +2871,6 @@
         grid.appendChild(subGridContainer);
       });
     } else {
-      // Jika filter sub-blok tertentu sedang aktif, tampilkan format flat grid standar
       baseFiltered.forEach(loc => {
         const cardElement = createSingleCardElement(loc);
         grid.appendChild(cardElement);
