@@ -1426,7 +1426,7 @@
           <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-3.5">
             
             <div class="flex items-center justify-between flex-wrap gap-2 border-slate-100 dark:border-slate-800">
-              <div class="flex items-center gap-4">
+              <div class="flex items-center gap-4 flex-wrap">
                 <h3 class="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2">
                   <i class="fa-solid fa-map text-indigo-600"></i> Room Layout & Occupancy Map
                 </h3>
@@ -1434,6 +1434,17 @@
                 <button onclick="toggleAddRoomModal(true)" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-1 px-3 rounded-lg text-[10px] flex items-center justify-center gap-1.5 shadow-sm transition-all">
                   <i class="fa-solid fa-circle-plus"></i> Add New Room
                 </button>
+
+                <!-- KOTAK SEARCH NAMA PENGHUNI ATAU NAMA KAMAR -->
+                <div class="relative w-56 sm:w-64">
+                  <span class="absolute inset-y-0 left-0 flex items-center pl-2.5 text-slate-400 pointer-events-none">
+                    <i class="fa-solid fa-magnifying-glass text-[11px]"></i>
+                  </span>
+                  <input type="text" id="search-mms-rooms" oninput="roomCurrentPage=1; renderMmsRooms();" placeholder="Cari nama kamar / penghuni..." class="w-full pl-8 pr-7 py-1 text-xs border border-slate-200 dark:border-slate-800 rounded-lg bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                  <button type="button" onclick="const input = document.getElementById('search-mms-rooms'); if(input && input.value) { input.value = ''; roomCurrentPage=1; renderMmsRooms(); }" class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200" title="Bersihkan pencarian">
+                    <i class="fa-solid fa-xmark text-[11px]"></i>
+                  </button>
+                </div>
                 
                 <!-- SUNTIKAN BARU: LIVE TELEMETRY BEDS YANG MENYESUAIKAN FILTER AKTIF -->
                 <div id="filter-beds-telemetry" class="flex items-center gap-2.5 text-[11px] font-bold pl-2 border-l border-slate-200 dark:border-slate-700">
@@ -2682,9 +2693,12 @@
         }).join('');
       }
 
-      // 2. ATURAN FILTER DATA RUANGAN BERLAPIS (STATUS & SUB-BLOK AREA)
+      // 2. ATURAN FILTER DATA RUANGAN BERLAPIS (STATUS, SUB-BLOK AREA, & SEARCH QUERY)
       let fltTotalBeds = 0;
       let fltOccupiedBeds = 0;
+
+      // Ambil kata kunci pencarian (diubah ke huruf kecil agar tidak sensitif huruf besar/kecil)
+      const searchRoomQuery = document.getElementById("search-mms-rooms") ? document.getElementById("search-mms-rooms").value.trim().toLowerCase() : "";
 
       const baseFiltered = mockLocations.filter(loc => {
         const matchesFloor = (activeFloorFilter === "All" || loc.floor === activeFloorFilter);
@@ -2700,6 +2714,17 @@
         }
 
         const occupants = mockOccupants.filter(o => o.location_id === loc.location_id && o.status !== "Checked-Out" && o.status !== "");
+
+        // SUNTIKAN FILTER SEARCH: Cek apakah cocok dengan nama kamar ATAU nama/NIK penghuni aktif di dalamnya
+        let matchesSearch = true;
+        if (searchRoomQuery !== "") {
+          const roomNameMatches = (loc.name || "").toLowerCase().includes(searchRoomQuery);
+          const occupantMatches = occupants.some(o => 
+            (o.employee_name && o.employee_name.toLowerCase().includes(searchRoomQuery)) ||
+            (o.employee_id && o.employee_id.toLowerCase().includes(searchRoomQuery))
+          );
+          matchesSearch = (roomNameMatches || occupantMatches);
+        }
         // PERBAIKAN MUTAKHIR: Kasur tetap dihitung terisi bagi yang statusnya Active, Leave, atau memiliki bendera cuti aktif
         const activeOnsiteCount = occupants.filter(o => o.status === "Active" || String(o.status).toLowerCase() === "leave" || o.is_on_leave === true || o.is_on_leave === "TRUE").length;
         const capacity = parseInt(loc.capacity || 4);
@@ -2707,7 +2732,8 @@
         let dynamicStatus = loc.status;
         if (loc.status === "Ready" && activeOnsiteCount >= capacity) dynamicStatus = "Full";
 
-        const isMatched = matchesFloor && matchesSubBlock && (activeStatusFilter === "All" || dynamicStatus === activeStatusFilter);
+        // Tambahkan `matchesSearch` ke dalam kondisi pemeriksaan
+        const isMatched = matchesFloor && matchesSubBlock && matchesSearch && (activeStatusFilter === "All" || dynamicStatus === activeStatusFilter);
         
         // SUNTIKAN KALKULASI: Akumulasikan total kasur jika kamar lolos dari filter yang aktif
         if (isMatched) {
@@ -2787,6 +2813,18 @@
 
       // 4. GENERATE LIST DETAIL KARTU BAWAH DENGAN FILTER PEMISAH BARIS GRID (ROW SEPARATED)
     grid.innerHTML = ""; // Bersihkan total kontainer utama untuk mencegah tumpang tindih layout
+
+    // Tampilkan pesan kosong jika pencarian tidak menemukan hasil
+    if (baseFiltered.length === 0) {
+      grid.innerHTML = `
+        <div class="col-span-1 md:col-span-2 lg:col-span-3 py-12 text-center text-slate-400 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
+          <i class="fa-solid fa-magnifying-glass text-3xl mb-2 text-slate-300 dark:text-slate-600"></i>
+          <p class="text-sm font-semibold text-slate-600 dark:text-slate-300">Tidak ada kamar atau penghuni yang cocok.</p>
+          <p class="text-xs text-slate-400 mt-1">Coba gunakan kata kunci pencarian yang lain.</p>
+        </div>
+      `;
+      return;
+    }
 
     if (activeSubBlockFilter === "All") {
       // Kelompokkan data kamar berdasarkan kombinasi Area dan nama Blok
