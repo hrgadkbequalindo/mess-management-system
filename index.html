@@ -1435,13 +1435,13 @@
                   <i class="fa-solid fa-circle-plus"></i> Add New Room
                 </button>
 
-                <!-- KOTAK SEARCH NAMA PENGHUNI ATAU NAMA KAMAR -->
+                <!-- KOTAK SEARCH NAMA KAMAR / PENGHUNI -->
                 <div class="relative w-56 sm:w-64">
                   <span class="absolute inset-y-0 left-0 flex items-center pl-2.5 text-slate-400 pointer-events-none">
                     <i class="fa-solid fa-magnifying-glass text-[11px]"></i>
                   </span>
                   <input type="text" id="search-mms-rooms" oninput="roomCurrentPage=1; renderMmsRooms();" placeholder="Cari nama kamar / penghuni..." class="w-full pl-8 pr-7 py-1 text-xs border border-slate-200 dark:border-slate-800 rounded-lg bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
-                  <button type="button" onclick="const input = document.getElementById('search-mms-rooms'); if(input && input.value) { input.value = ''; roomCurrentPage=1; renderMmsRooms(); }" class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200" title="Bersihkan pencarian">
+                  <button type="button" onclick="const input = document.getElementById('search-mms-rooms'); if(input && input.value) { input.value = ''; roomCurrentPage=1; renderMmsRooms(); }" class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200" title="Bersihkan">
                     <i class="fa-solid fa-xmark text-[11px]"></i>
                   </button>
                 </div>
@@ -2693,11 +2693,11 @@
         }).join('');
       }
 
-      // 2. ATURAN FILTER DATA RUANGAN BERLAPIS (STATUS, SUB-BLOK AREA, & SEARCH QUERY)
+      // 2. ATURAN FILTER DATA RUANGAN BERLAPIS (STATUS, SUB-BLOK AREA, & SEARCH)
       let fltTotalBeds = 0;
       let fltOccupiedBeds = 0;
 
-      // Ambil kata kunci pencarian (diubah ke huruf kecil agar tidak sensitif huruf besar/kecil)
+      // Ambil teks pencarian yang diketik user
       const searchRoomQuery = document.getElementById("search-mms-rooms") ? document.getElementById("search-mms-rooms").value.trim().toLowerCase() : "";
 
       const baseFiltered = mockLocations.filter(loc => {
@@ -2715,7 +2715,7 @@
 
         const occupants = mockOccupants.filter(o => o.location_id === loc.location_id && o.status !== "Checked-Out" && o.status !== "");
 
-        // SUNTIKAN FILTER SEARCH: Cek apakah cocok dengan nama kamar ATAU nama/NIK penghuni aktif di dalamnya
+        // Pengecekan kata kunci search ke Nama Kamar, Nama Karyawan, dan NIK
         let matchesSearch = true;
         if (searchRoomQuery !== "") {
           const roomNameMatches = (loc.name || "").toLowerCase().includes(searchRoomQuery);
@@ -2725,6 +2725,7 @@
           );
           matchesSearch = (roomNameMatches || occupantMatches);
         }
+
         // PERBAIKAN MUTAKHIR: Kasur tetap dihitung terisi bagi yang statusnya Active, Leave, atau memiliki bendera cuti aktif
         const activeOnsiteCount = occupants.filter(o => o.status === "Active" || String(o.status).toLowerCase() === "leave" || o.is_on_leave === true || o.is_on_leave === "TRUE").length;
         const capacity = parseInt(loc.capacity || 4);
@@ -2732,7 +2733,7 @@
         let dynamicStatus = loc.status;
         if (loc.status === "Ready" && activeOnsiteCount >= capacity) dynamicStatus = "Full";
 
-        // Tambahkan `matchesSearch` ke dalam kondisi pemeriksaan
+        // matchesSearch dimasukkan ke filter
         const isMatched = matchesFloor && matchesSubBlock && matchesSearch && (activeStatusFilter === "All" || dynamicStatus === activeStatusFilter);
         
         // SUNTIKAN KALKULASI: Akumulasikan total kasur jika kamar lolos dari filter yang aktif
@@ -2814,7 +2815,7 @@
       // 4. GENERATE LIST DETAIL KARTU BAWAH DENGAN FILTER PEMISAH BARIS GRID (ROW SEPARATED)
     grid.innerHTML = ""; // Bersihkan total kontainer utama untuk mencegah tumpang tindih layout
 
-    // Tampilkan pesan kosong jika pencarian tidak menemukan hasil
+    // Tampilkan informasi jika pencarian tidak menemukan hasil
     if (baseFiltered.length === 0) {
       grid.innerHTML = `
         <div class="col-span-1 md:col-span-2 lg:col-span-3 py-12 text-center text-slate-400 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
